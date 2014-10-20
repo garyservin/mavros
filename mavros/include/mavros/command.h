@@ -159,5 +159,3 @@ private:
 
 }; // namespace mavplugin
 
-PLUGINLIB_EXPORT_CLASS(mavplugin::CommandPlugin, mavplugin::MavRosPlugin)
-

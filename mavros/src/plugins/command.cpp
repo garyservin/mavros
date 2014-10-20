@@ -24,17 +24,7 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include <chrono>
-#include <condition_variable>
-#include <mavros/mavros_plugin.h>
 #include <mavros/command.h>
-#include <pluginlib/class_list_macros.h>
-
-#include <mavros/CommandLong.h>
-#include <mavros/CommandInt.h>
-#include <mavros/CommandBool.h>
-#include <mavros/CommandHome.h>
-#include <mavros/CommandTOL.h>
 
 namespace mavplugin {
 

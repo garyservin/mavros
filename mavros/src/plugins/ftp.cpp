@@ -24,26 +24,7 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include <chrono>
-#include <cerrno>
-#include <condition_variable>
-#include <mavros/mavros_plugin.h>
 #include <mavros/ftp.h>
-#include <pluginlib/class_list_macros.h>
-
-#include <std_srvs/Empty.h>
-#include <mavros/FileEntry.h>
-#include <mavros/FileList.h>
-#include <mavros/FileOpen.h>
-#include <mavros/FileClose.h>
-#include <mavros/FileRead.h>
-#include <mavros/FileWrite.h>
-#include <mavros/FileRemove.h>
-#include <mavros/FileMakeDir.h>
-#include <mavros/FileRemoveDir.h>
-#include <mavros/FileTruncate.h>
-#include <mavros/FileRename.h>
-#include <mavros/FileChecksum.h>
 
 // enable debugging messages
 //#define FTP_LL_DEBUG
@@ -566,7 +547,12 @@ namespace mavplugin {
 			if (sep_it != name_size.end()) {
 				name_size.erase(name_size.begin(), sep_it + 1);
 				if (name_size.size() != 0)
-					ent.size = std::stoi(name_size);
+					//ent.size = std::stoi(name_size);
+					try {
+						ent.size = boost::lexical_cast<int>(name_size);
+					} catch( boost::bad_lexical_cast const& ) {
+						std::cout << "Error: input string was not valid" << std::endl;
+					}
 			}
 
 			ROS_DEBUG_STREAM_NAMED("ftp", "FTP:List File: " << ent.name << " SZ: " << ent.size);
