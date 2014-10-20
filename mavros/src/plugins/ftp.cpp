@@ -24,26 +24,7 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include <chrono>
-#include <cerrno>
-#include <condition_variable>
-#include <mavros/mavros_plugin.h>
 #include <mavros/ftp.h>
-#include <pluginlib/class_list_macros.h>
-
-#include <std_srvs/Empty.h>
-#include <mavros/FileEntry.h>
-#include <mavros/FileList.h>
-#include <mavros/FileOpen.h>
-#include <mavros/FileClose.h>
-#include <mavros/FileRead.h>
-#include <mavros/FileWrite.h>
-#include <mavros/FileRemove.h>
-#include <mavros/FileMakeDir.h>
-#include <mavros/FileRemoveDir.h>
-#include <mavros/FileTruncate.h>
-#include <mavros/FileRename.h>
-#include <mavros/FileChecksum.h>
 
 // enable debugging messages
 //#define FTP_LL_DEBUG
