@@ -1,7 +1,7 @@
 /**
  * @brief Command plugin
- * @file command.cpp
- * @author Vladimir Ermakov <vooon341@gmail.com>
+ * @file command.h
+ * @author Gary Servin <gary@creativa77.com>
  *
  * @addtogroup plugin
  * @{

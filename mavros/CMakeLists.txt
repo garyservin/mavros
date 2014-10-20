@@ -172,6 +172,7 @@ add_library(mavros
   src/lib/mavros.cpp
   src/lib/mavlink_diag.cpp
   src/plugins/command.cpp
+  src/plugins/global_position.cpp
 )
 add_dependencies(mavros
   mavros_generate_messages_cpp
