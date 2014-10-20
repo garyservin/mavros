@@ -26,6 +26,7 @@
 #include <mavros/utils.h>
 #include <fnmatch.h>
 #include <mavros/command.h>
+#include <mavros/ftp.h>
 #include <mavros/global_position.h>
 #include <mavros/gps.h>
 #include <mavros/imu_pub.h>
@@ -225,6 +226,9 @@ void MavRos::add_plugins() {
 	boost::shared_ptr<mavplugin::MavRosPlugin> plugin;
 
 	plugin = boost::make_shared<mavplugin::CommandPlugin>();
+	add_plugin_simple(plugin);
+
+	plugin = boost::make_shared<mavplugin::FTPPlugin>();
 	add_plugin_simple(plugin);
 
 	plugin = boost::make_shared<mavplugin::GlobalPositionPlugin>();
