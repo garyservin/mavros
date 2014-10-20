@@ -28,6 +28,7 @@
 #include <mavros/command.h>
 #include <mavros/global_position.h>
 #include <mavros/gps.h>
+#include <mavros/imu_pub.h>
 
 using namespace mavros;
 using namespace mavconn;
@@ -231,10 +232,10 @@ void MavRos::add_plugins() {
 	plugin = boost::make_shared<mavplugin::GPSPlugin>();
 	add_plugin_simple(plugin);
 
-/*
-	plugin = boost::make_shared<mavlink::IMUPubPlugin>();
+	plugin = boost::make_shared<mavplugin::IMUPubPlugin>();
 	add_plugin_simple(plugin);
 
+/*
 	plugin = boost::make_shared<mavlink::LocalPositionPlugin>();
 	add_plugin_simple(plugin);
 
