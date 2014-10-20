@@ -31,6 +31,7 @@
 #include <mavros/gps.h>
 #include <mavros/imu_pub.h>
 #include <mavros/local_position.h>
+#include <mavros/param_plugin.h>
 
 using namespace mavros;
 using namespace mavconn;
@@ -243,10 +244,8 @@ void MavRos::add_plugins() {
 	plugin = boost::make_shared<mavplugin::LocalPositionPlugin>();
 	add_plugin_simple(plugin);
 
-/*
-	plugin = boost::make_shared<mavlink::ParamPlugin>();
+	plugin = boost::make_shared<mavplugin::ParamPlugin>();
 	add_plugin_simple(plugin);
-*/
 }
 
 void MavRos::terminate_cb() {

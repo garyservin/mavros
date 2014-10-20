@@ -177,7 +177,9 @@ add_library(mavros
   src/plugins/gps.cpp
   src/plugins/imu_pub.cpp
   src/plugins/local_position.cpp
+  src/plugins/param.cpp
 )
+
 add_dependencies(mavros
   mavros_generate_messages_cpp
   mavconn
