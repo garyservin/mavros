@@ -192,5 +192,3 @@ void GlobalPositionPlugin::handle_global_position_int(const mavlink_message_t *m
 
 
 }; // namespace mavplugin
-
-PLUGINLIB_EXPORT_CLASS(mavplugin::GlobalPositionPlugin, mavplugin::MavRosPlugin)

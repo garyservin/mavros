@@ -23,6 +23,8 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
+#ifndef MAVPLUGIN_GPS_H__
+#define MAVPLUGIN_GPS_H__
 
 #include <angles/angles.h>
 #include <mavros/mavros_plugin.h>
@@ -33,7 +35,9 @@
 #include <sensor_msgs/TimeReference.h>
 #include <geometry_msgs/TwistStamped.h>
 
-#define UINT16_MAX 65535
+#ifdef __ANDROID__
+  #define UINT16_MAX 65535
+#endif
 
 namespace mavplugin {
 
@@ -80,3 +84,5 @@ private:
 };
 
 }; // namespace navplugin
+
+#endif

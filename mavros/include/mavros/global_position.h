@@ -23,6 +23,8 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
+#ifndef MAVPLUGIN_GLOBAL_POSITION_H__
+#define MAVPLUGIN_GLOBAL_POSITION_H__
 
 #include <mavros/mavros_plugin.h>
 #include <mavros/gps_conversions.h>
@@ -38,7 +40,10 @@
 #include <std_msgs/Float64.h>
 #include <std_msgs/Header.h>
 
-#define UINT16_MAX 65535
+#ifdef __ANDROID__
+  #define UINT16_MAX 65535
+#endif
+
 
 namespace mavplugin {
 
@@ -83,3 +88,5 @@ private:
 };
 
 }; // namespace mavplugin
+
+#endif

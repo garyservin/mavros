@@ -23,6 +23,8 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
+#ifndef MAVPLUGIN_COMMAND_H__
+#define MAVPLUGIN_COMMAND_H__
 
 #include <chrono>
 #include <condition_variable>
@@ -159,3 +161,4 @@ private:
 
 }; // namespace mavplugin
 
+#endif
