@@ -28,6 +28,7 @@
 #include <cerrno>
 #include <condition_variable>
 #include <mavros/mavros_plugin.h>
+#include <mavros/ftp.h>
 #include <pluginlib/class_list_macros.h>
 
 #include <std_srvs/Empty.h>
@@ -49,82 +50,23 @@
 
 namespace mavplugin {
 
-/**
- * @brief FTP Request message abstraction class
- *
- * @note This class not portable, and works on little-endian machines only.
- */
-class FTPRequest {
-public:
-	/// @brief This is the payload which is in mavlink_file_transfer_protocol_t.payload.
-	/// We pad the structure ourselves to 32 bit alignment to avoid usage of any pack pragmas.
-	struct PayloadHeader {
-		uint16_t	seqNumber;	///< sequence number for message
-		uint8_t		session;	///< Session id for read and write commands
-		uint8_t		opcode;		///< Command opcode
-		uint8_t		size;		///< Size of data
-		uint8_t		req_opcode;	///< Request opcode returned in kRspAck, kRspNak message
-		uint8_t		padding[2];	///< 32 bit aligment padding
-		uint32_t	offset;		///< Offsets for List and Read commands
-		uint8_t		data[];		///< command data, varies by Opcode
-	};
-
-	/// @brief Command opcodes
-	enum Opcode : uint8_t {
-		kCmdNone,		///< ignored, always acked
-		kCmdTerminateSession,	///< Terminates open Read session
-		kCmdResetSessions,	///< Terminates all open Read sessions
-		kCmdListDirectory,	///< List files in <path> from <offset>
-		kCmdOpenFileRO,		///< Opens file at <path> for reading, returns <session>
-		kCmdReadFile,		///< Reads <size> bytes from <offset> in <session>
-		kCmdCreateFile,		///< Creates file at <path> for writing, returns <session>
-		kCmdWriteFile,		///< Writes <size> bytes to <offset> in <session>
-		kCmdRemoveFile,		///< Remove file at <path>
-		kCmdCreateDirectory,	///< Creates directory at <path>
-		kCmdRemoveDirectory,	///< Removes Directory at <path>, must be empty
-		kCmdOpenFileWO,		///< Opens file at <path> for writing, returns <session>
-		kCmdTruncateFile,	///< Truncate file at <path> to <offset> length
-		kCmdRename,		///< Rename <path1> to <path2>
-		kCmdCalcFileCRC32,	///< Calculate CRC32 for file at <path>
-
-		kRspAck = 128,		///< Ack response
-		kRspNak			///< Nak response
-	};
-
-	/// @brief Error codes returned in Nak response.
-	enum ErrorCode : uint8_t {
-		kErrNone,
-		kErrFail,			///< Unknown failure
-		kErrFailErrno,			///< Command failed, errno sent back in PayloadHeader.data[1]
-		kErrInvalidDataSize,		///< PayloadHeader.size is invalid
-		kErrInvalidSession,		///< Session is not currently open
-		kErrNoSessionsAvailable,	///< All available Sessions in use
-		kErrEOF,			///< Offset past end of file for List and Read commands
-		kErrUnknownCommand		///< Unknown command opcode
-	};
-
-	static const char	DIRENT_FILE = 'F';
-	static const char	DIRENT_DIR = 'D';
-	static const char	DIRENT_SKIP = 'S';
-	static const uint8_t	DATA_MAXSZ = MAVLINK_MSG_FILE_TRANSFER_PROTOCOL_FIELD_PAYLOAD_LEN - sizeof(PayloadHeader);
-
-	uint8_t *raw_payload() {
+	uint8_t *FTPRequest::raw_payload() {
 		return message.payload;
 	}
 
-	inline PayloadHeader *header() {
+	inline FTPRequest::PayloadHeader *FTPRequest::header() {
 		return reinterpret_cast<PayloadHeader *>(message.payload);
 	}
 
-	uint8_t *data() {
+	uint8_t *FTPRequest::data() {
 		return header()->data;
 	}
 
-	char *data_c() {
+	char *FTPRequest::data_c() {
 		return reinterpret_cast<char *>(header()->data);
 	}
 
-	uint32_t *data_u32() {
+	uint32_t *FTPRequest::data_u32() {
 		return reinterpret_cast<uint32_t *>(header()->data);
 	}
 
@@ -135,7 +77,7 @@ public:
 	 * @note this function allow null termination inside string
 	 *       it used to send multiple strings in one message
 	 */
-	void set_data_string(std::string &s) {
+	void FTPRequest::set_data_string(std::string &s) {
 		size_t sz = (s.size() < DATA_MAXSZ - 1)? s.size() : DATA_MAXSZ - 1;
 
 		memcpy(data_c(), s.c_str(), sz);
@@ -143,14 +85,14 @@ public:
 		header()->size = sz;
 	}
 
-	uint8_t get_target_system_id() {
+	uint8_t FTPRequest::get_target_system_id() {
 		return message.target_system;
 	}
 
 	/**
 	 * @brief Decode and check target system
 	 */
-	bool decode(UAS *uas, const mavlink_message_t *msg) {
+	bool FTPRequest::decode(UAS *uas, const mavlink_message_t *msg) {
 		mavlink_msg_file_transfer_protocol_decode(msg, &message);
 
 #ifdef FTP_LL_DEBUG
@@ -165,7 +107,7 @@ public:
 	/**
 	 * @brief Encode and send message
 	 */
-	void send(UAS *uas, uint16_t seqNumber) {
+	void FTPRequest::send(UAS *uas, uint16_t seqNumber) {
 		mavlink_message_t msg;
 
 		auto hdr = header();
@@ -184,28 +126,21 @@ public:
 		UAS_FCU(uas)->send_message(&msg);
 	}
 
-	FTPRequest() :
+	FTPRequest::FTPRequest() :
 		message{}
 	{ }
 
-	explicit FTPRequest(Opcode op, uint8_t session = 0) :
+	FTPRequest::FTPRequest(Opcode op, uint8_t session) :
 		message{}
 	{
 		header()->session = session;
 		header()->opcode = op;
 	}
 
-private:
-	mavlink_file_transfer_protocol_t message;
-};
-
-
 /**
  * @brief FTP plugin.
  */
-class FTPPlugin : public MavRosPlugin {
-public:
-	FTPPlugin() :
+	FTPPlugin::FTPPlugin() :
 		uas(nullptr),
 		op_state(OP_IDLE),
 		last_send_seqnr(0),
@@ -218,7 +153,7 @@ public:
 		read_buffer{}
 	{ }
 
-	void initialize(UAS &uas_,
+	void FTPPlugin::initialize(UAS &uas_,
 			ros::NodeHandle &nh,
 			diagnostic_updater::Updater &diag_updater)
 	{
@@ -240,93 +175,22 @@ public:
 		checksum_srv = ftp_nh.advertiseService("checksum", &FTPPlugin::checksum_cb, this);
 	}
 
-	std::string const get_name() const {
+	std::string const FTPPlugin::get_name() const {
 		return "FTP";
 	}
 
-	const message_map get_rx_handlers() {
+	const MavRosPlugin::message_map FTPPlugin::get_rx_handlers() {
 		return {
 			MESSAGE_HANDLER(MAVLINK_MSG_ID_FILE_TRANSFER_PROTOCOL, &FTPPlugin::handle_file_transfer_protocol),
 		};
 	}
-
-private:
-	UAS *uas;
-	ros::NodeHandle ftp_nh;
-	ros::ServiceServer list_srv;
-	ros::ServiceServer open_srv;
-	ros::ServiceServer close_srv;
-	ros::ServiceServer read_srv;
-	ros::ServiceServer write_srv;
-	ros::ServiceServer mkdir_srv;
-	ros::ServiceServer rmdir_srv;
-	ros::ServiceServer remove_srv;
-	ros::ServiceServer rename_srv;
-	ros::ServiceServer truncate_srv;
-	ros::ServiceServer reset_srv;
-	ros::ServiceServer checksum_srv;
-
-	//! This type used in servicies to store 'data' fileds.
-	typedef std::vector<uint8_t> V_FileData;
-
-	enum OpState {
-		OP_IDLE,
-		OP_ACK,
-		OP_LIST,
-		OP_OPEN,
-		OP_READ,
-		OP_WRITE,
-		OP_CHECKSUM
-	};
-
-	OpState op_state;
-	uint16_t last_send_seqnr;	//!< seqNumber for send.
-	uint32_t active_session;	//!< session id of current operation
-
-	std::mutex cond_mutex;
-	std::condition_variable cond;	//!< wait condvar
-	bool is_error;			//!< error signaling flag (timeout/proto error)
-	int r_errno;			//!< store errno from server
-
-	// FTP:List
-	uint32_t list_offset;
-	std::string list_path;
-	std::vector<mavros::FileEntry> list_entries;
-
-	// FTP:Open / FTP:Close
-	std::string open_path;
-	size_t open_size;
-	std::map<std::string, uint32_t> session_file_map;
-
-	// FTP:Read
-	size_t read_size;
-	uint32_t read_offset;
-	V_FileData read_buffer;
-
-	// FTP:Write
-	uint32_t write_offset;
-	V_FileData write_buffer;
-	V_FileData::iterator write_it;
-
-	// FTP:CalcCRC32
-	uint32_t checksum_crc32;
-
-	// Timeouts,
-	// computed as x4 time that needed for transmission of
-	// one message at 57600 baud rate
-	static constexpr int LIST_TIMEOUT_MS = 5000;
-	static constexpr int OPEN_TIMEOUT_MS = 200;
-	static constexpr int CHUNK_TIMEOUT_MS = 200;
-
-	//! Maximum difference between allocated space and used
-	static constexpr size_t MAX_RESERVE_DIFF = 0x10000;
 
 	//! @todo exchange speed calculation
 	//! @todo diagnostics
 
 	/* -*- message handler -*- */
 
-	void handle_file_transfer_protocol(const mavlink_message_t *msg, uint8_t sysid, uint8_t compid) {
+	void FTPPlugin::handle_file_transfer_protocol(const mavlink_message_t *msg, uint8_t sysid, uint8_t compid) {
 		FTPRequest req;
 		if (!req.decode(uas, msg)) {
 			ROS_DEBUG_NAMED("ftp", "FTP: Wrong System Id, MY %u, TGT %u",
@@ -356,7 +220,7 @@ private:
 		}
 	}
 
-	void handle_req_ack(FTPRequest &req) {
+	void FTPPlugin::handle_req_ack(FTPRequest &req) {
 		switch (op_state) {
 		case OP_IDLE:		send_reset();			break;
 		case OP_ACK:		go_idle(false);			break;
@@ -371,7 +235,7 @@ private:
 		}
 	}
 
-	void handle_req_nack(FTPRequest &req) {
+	void FTPPlugin::handle_req_nack(FTPRequest &req) {
 		auto hdr = req.header();
 		auto error_code = static_cast<FTPRequest::ErrorCode>(req.data()[0]);
 		OpState prev_op = op_state;
@@ -409,7 +273,7 @@ private:
 		go_idle(true);
 	}
 
-	void handle_ack_list(FTPRequest &req) {
+	void FTPPlugin::handle_ack_list(FTPRequest &req) {
 		auto hdr = req.header();
 
 		ROS_DEBUG_NAMED("ftp", "FTP:m: ACK List SZ(%u) OFF(%u)", hdr->size, hdr->offset);
@@ -467,7 +331,7 @@ private:
 		}
 	}
 
-	void handle_ack_open(FTPRequest &req) {
+	void FTPPlugin::handle_ack_open(FTPRequest &req) {
 		auto hdr = req.header();
 
 		ROS_DEBUG_NAMED("ftp", "FTP:m: ACK Open OPCODE(%u)", hdr->req_opcode);
@@ -480,7 +344,7 @@ private:
 		go_idle(false);
 	}
 
-	void handle_ack_read(FTPRequest &req) {
+	void FTPPlugin::handle_ack_read(FTPRequest &req) {
 		auto hdr = req.header();
 
 		ROS_DEBUG_NAMED("ftp", "FTP:m: ACK Read SZ(%u)", hdr->size);
@@ -513,7 +377,7 @@ private:
 			read_file_end();
 	}
 
-	void handle_ack_write(FTPRequest &req) {
+	void FTPPlugin::handle_ack_write(FTPRequest &req) {
 		auto hdr = req.header();
 
 		ROS_DEBUG_NAMED("ftp", "FTP:m: ACK Write SZ(%u)", hdr->size);
@@ -550,7 +414,7 @@ private:
 			write_file_end();
 	}
 
-	void handle_ack_checksum(FTPRequest &req) {
+	void FTPPlugin::handle_ack_checksum(FTPRequest &req) {
 		auto hdr = req.header();
 
 		ROS_DEBUG_NAMED("ftp", "FTP:m: ACK CalcFileCRC32 OPCODE(%u)", hdr->req_opcode);
@@ -569,7 +433,7 @@ private:
 	 * @param is_error_ mark that caused in error case
 	 * @param r_errno_ set r_errno in error case
 	 */
-	void go_idle(bool is_error_, int r_errno_ = 0) {
+	void FTPPlugin::go_idle(bool is_error_, int r_errno_) {
 		op_state = OP_IDLE;
 		is_error = is_error_;
 		if (is_error && r_errno_ != 0)	r_errno = r_errno_;
@@ -577,7 +441,7 @@ private:
 		cond.notify_all();
 	}
 
-	void send_reset() {
+	void FTPPlugin::send_reset() {
 		ROS_DEBUG_NAMED("ftp", "FTP:m: kCmdResetSessions");
 		if (session_file_map.size() > 0) {
 			ROS_WARN_NAMED("ftp", "FTP: Reset closes %zu sessons",
@@ -591,7 +455,7 @@ private:
 	}
 
 	/// Send any command with string payload (usually file/dir path)
-	inline void send_any_path_command(FTPRequest::Opcode op, const std::string debug_msg, std::string &path, uint32_t offset) {
+	inline void FTPPlugin::send_any_path_command(FTPRequest::Opcode op, const std::string debug_msg, std::string &path, uint32_t offset) {
 		ROS_DEBUG_STREAM_NAMED("ftp", "FTP:m: " << debug_msg << path << " off: " << offset);
 		FTPRequest req(op);
 		req.header()->offset = offset;
@@ -599,23 +463,23 @@ private:
 		req.send(uas, last_send_seqnr);
 	}
 
-	void send_list_command() {
+	void FTPPlugin::send_list_command() {
 		send_any_path_command(FTPRequest::kCmdListDirectory, "kCmdListDirectory: ", list_path, list_offset);
 	}
 
-	void send_open_ro_command() {
+	void FTPPlugin::send_open_ro_command() {
 		send_any_path_command(FTPRequest::kCmdOpenFileRO, "kCmdOpenFileRO: ", open_path, 0);
 	}
 
-	void send_open_wo_command() {
+	void FTPPlugin::send_open_wo_command() {
 		send_any_path_command(FTPRequest::kCmdOpenFileWO, "kCmdOpenFileWO: ", open_path, 0);
 	}
 
-	void send_create_command() {
+	void FTPPlugin::send_create_command() {
 		send_any_path_command(FTPRequest::kCmdCreateFile, "kCmdCreateFile: ", open_path, 0);
 	}
 
-	void send_terminate_command(uint32_t session) {
+	void FTPPlugin::send_terminate_command(uint32_t session) {
 		ROS_DEBUG_STREAM_NAMED("ftp", "FTP:m: kCmdTerminateSession: " << session);
 		FTPRequest req(FTPRequest::kCmdTerminateSession, session);
 		req.header()->offset = 0;
@@ -623,7 +487,7 @@ private:
 		req.send(uas, last_send_seqnr);
 	}
 
-	void send_read_command() {
+	void FTPPlugin::send_read_command() {
 		// read operation always try read DATA_MAXSZ block (hdr->size ignored)
 		ROS_DEBUG_STREAM_NAMED("ftp", "FTP:m: kCmdReadFile: " << active_session << " off: " << read_offset);
 		FTPRequest req(FTPRequest::kCmdReadFile, active_session);
@@ -632,7 +496,7 @@ private:
 		req.send(uas, last_send_seqnr);
 	}
 
-	void send_write_command(const size_t bytes_to_copy) {
+	void FTPPlugin::send_write_command(const size_t bytes_to_copy) {
 		// write chunk from write_buffer [write_it..bytes_to_copy]
 		ROS_DEBUG_STREAM_NAMED("ftp", "FTP:m: kCmdWriteFile: " << active_session << " off: " << write_offset << " sz: " << bytes_to_copy);
 		FTPRequest req(FTPRequest::kCmdWriteFile, active_session);
@@ -642,11 +506,11 @@ private:
 		req.send(uas, last_send_seqnr);
 	}
 
-	void send_remove_command(std::string &path) {
+	void FTPPlugin::send_remove_command(std::string &path) {
 		send_any_path_command(FTPRequest::kCmdRemoveFile, "kCmdRemoveFile: ", path, 0);
 	}
 
-	bool send_rename_command(std::string &old_path, std::string &new_path) {
+	bool FTPPlugin::send_rename_command(std::string &old_path, std::string &new_path) {
 		std::ostringstream os;
 		os << old_path;
 		os << '\0';
@@ -663,25 +527,25 @@ private:
 		return true;
 	}
 
-	void send_truncate_command(std::string &path, size_t length) {
+	void FTPPlugin::send_truncate_command(std::string &path, size_t length) {
 		send_any_path_command(FTPRequest::kCmdTruncateFile, "kCmdTruncateFile: ", path, length);
 	}
 
-	void send_create_dir_command(std::string &path) {
+	void FTPPlugin::send_create_dir_command(std::string &path) {
 		send_any_path_command(FTPRequest::kCmdCreateDirectory, "kCmdCreateDirectory: ", path, 0);
 	}
 
-	void send_remove_dir_command(std::string &path) {
+	void FTPPlugin::send_remove_dir_command(std::string &path) {
 		send_any_path_command(FTPRequest::kCmdRemoveDirectory, "kCmdRemoveDirectory: ", path, 0);
 	}
 
-	void send_calc_file_crc32_command(std::string &path) {
+	void FTPPlugin::send_calc_file_crc32_command(std::string &path) {
 		send_any_path_command(FTPRequest::kCmdCalcFileCRC32, "kCmdCalcFileCRC32: ", path, 0);
 	}
 
 	/* -*- helpers -*- */
 
-	void add_dirent(const char *ptr, size_t slen) {
+	void FTPPlugin::add_dirent(const char *ptr, size_t slen) {
 		mavros::FileEntry ent;
 		ent.size = 0;
 
@@ -711,12 +575,12 @@ private:
 		list_entries.push_back(ent);
 	}
 
-	void list_directory_end() {
+	void FTPPlugin::list_directory_end() {
 		ROS_DEBUG_NAMED("ftp", "FTP:List done");
 		go_idle(false);
 	}
 
-	void list_directory(std::string &path) {
+	void FTPPlugin::list_directory(std::string &path) {
 		list_offset = 0;
 		list_path = path;
 		list_entries.clear();
@@ -725,7 +589,7 @@ private:
 		send_list_command();
 	}
 
-	bool open_file(std::string &path, int mode) {
+	bool FTPPlugin::open_file(std::string &path, int mode) {
 		open_path = path;
 		open_size = 0;
 		op_state = OP_OPEN;
@@ -746,7 +610,7 @@ private:
 		return true;
 	}
 
-	bool close_file(std::string &path) {
+	bool FTPPlugin::close_file(std::string &path) {
 		auto it = session_file_map.find(path);
 		if (it == session_file_map.end()) {
 			ROS_ERROR_NAMED("ftp", "FTP:Close %s: not opened", path.c_str());
@@ -760,12 +624,12 @@ private:
 		return true;
 	}
 
-	void read_file_end() {
+	void FTPPlugin::read_file_end() {
 		ROS_DEBUG_NAMED("ftp", "FTP:Read done");
 		go_idle(false);
 	}
 
-	bool read_file(std::string &path, size_t off, size_t len) {
+	bool FTPPlugin::read_file(std::string &path, size_t off, size_t len) {
 		auto it = session_file_map.find(path);
 		if (it == session_file_map.end()) {
 			ROS_ERROR_NAMED("ftp", "FTP:Read %s: not opened", path.c_str());
@@ -788,12 +652,12 @@ private:
 		return true;
 	}
 
-	void write_file_end() {
+	void FTPPlugin::write_file_end() {
 		ROS_DEBUG_NAMED("ftp", "FTP:Write done");
 		go_idle(false);
 	}
 
-	bool write_file(std::string &path, size_t off, V_FileData &data) {
+	bool FTPPlugin::write_file(std::string &path, size_t off, V_FileData &data) {
 		auto it = session_file_map.find(path);
 		if (it == session_file_map.end()) {
 			ROS_ERROR_NAMED("ftp", "FTP:Write %s: not opened", path.c_str());
@@ -811,47 +675,47 @@ private:
 		return true;
 	}
 
-	void remove_file(std::string &path) {
+	void FTPPlugin::remove_file(std::string &path) {
 		op_state = OP_ACK;
 		send_remove_command(path);
 	}
 
-	bool rename_(std::string &old_path, std::string &new_path) {
+	bool FTPPlugin::rename_(std::string &old_path, std::string &new_path) {
 		op_state = OP_ACK;
 		return send_rename_command(old_path, new_path);
 	}
 
-	void truncate_file(std::string &path, size_t length) {
+	void FTPPlugin::truncate_file(std::string &path, size_t length) {
 		op_state = OP_ACK;
 		send_truncate_command(path, length);
 	}
 
-	void create_directory(std::string &path) {
+	void FTPPlugin::create_directory(std::string &path) {
 		op_state = OP_ACK;
 		send_create_dir_command(path);
 	}
 
-	void remove_directory(std::string &path) {
+	void FTPPlugin::remove_directory(std::string &path) {
 		op_state = OP_ACK;
 		send_remove_dir_command(path);
 	}
 
-	void checksum_crc32_file(std::string &path) {
+	void FTPPlugin::checksum_crc32_file(std::string &path) {
 		op_state = OP_CHECKSUM;
 		checksum_crc32 = 0;
 		send_calc_file_crc32_command(path);
 	}
 
-	static constexpr int compute_rw_timeout(size_t len) {
+	constexpr int FTPPlugin::compute_rw_timeout(size_t len) {
 		return CHUNK_TIMEOUT_MS * (len / FTPRequest::DATA_MAXSZ + 1);
 	}
 
-	size_t write_bytes_to_copy() {
+	size_t FTPPlugin::write_bytes_to_copy() {
 		return std::min<size_t>(std::distance(write_it, write_buffer.end()),
 				FTPRequest::DATA_MAXSZ);
 	}
 
-	bool wait_completion(const int msecs) {
+	bool FTPPlugin::wait_completion(const int msecs) {
 		std::unique_lock<std::mutex> lock(cond_mutex);
 
 		bool is_timedout = cond.wait_for(lock, std::chrono::milliseconds(msecs))
@@ -879,7 +743,7 @@ private:
 		return false;				\
 	}
 
-	bool list_cb(mavros::FileList::Request &req,
+	bool FTPPlugin::list_cb(mavros::FileList::Request &req,
 			mavros::FileList::Response &res) {
 		SERVICE_IDLE_CHECK();
 
@@ -894,7 +758,7 @@ private:
 		return true;
 	}
 
-	bool open_cb(mavros::FileOpen::Request &req,
+	bool FTPPlugin::open_cb(mavros::FileOpen::Request &req,
 			mavros::FileOpen::Response &res) {
 		SERVICE_IDLE_CHECK();
 
@@ -916,7 +780,7 @@ private:
 		return true;
 	}
 
-	bool close_cb(mavros::FileClose::Request &req,
+	bool FTPPlugin::close_cb(mavros::FileClose::Request &req,
 			mavros::FileClose::Response &res) {
 		SERVICE_IDLE_CHECK();
 
@@ -929,7 +793,7 @@ private:
 		return true;
 	}
 
-	bool read_cb(mavros::FileRead::Request &req,
+	bool FTPPlugin::read_cb(mavros::FileRead::Request &req,
 			mavros::FileRead::Response &res) {
 		SERVICE_IDLE_CHECK();
 
@@ -945,7 +809,7 @@ private:
 		return true;
 	}
 
-	bool write_cb(mavros::FileWrite::Request &req,
+	bool FTPPlugin::write_cb(mavros::FileWrite::Request &req,
 			mavros::FileWrite::Response &res) {
 		SERVICE_IDLE_CHECK();
 
@@ -960,7 +824,7 @@ private:
 		return true;
 	}
 
-	bool remove_cb(mavros::FileRemove::Request &req,
+	bool FTPPlugin::remove_cb(mavros::FileRemove::Request &req,
 			mavros::FileRemove::Response &res) {
 		SERVICE_IDLE_CHECK();
 
@@ -971,7 +835,7 @@ private:
 		return true;
 	}
 
-	bool rename_cb(mavros::FileRename::Request &req,
+	bool FTPPlugin::rename_cb(mavros::FileRename::Request &req,
 			mavros::FileRename::Response &res) {
 		SERVICE_IDLE_CHECK();
 
@@ -985,7 +849,7 @@ private:
 	}
 
 
-	bool truncate_cb(mavros::FileTruncate::Request &req,
+	bool FTPPlugin::truncate_cb(mavros::FileTruncate::Request &req,
 			mavros::FileTruncate::Response &res) {
 		SERVICE_IDLE_CHECK();
 
@@ -997,7 +861,7 @@ private:
 		return true;
 	}
 
-	bool mkdir_cb(mavros::FileMakeDir::Request &req,
+	bool FTPPlugin::mkdir_cb(mavros::FileMakeDir::Request &req,
 			mavros::FileMakeDir::Response &res) {
 		SERVICE_IDLE_CHECK();
 
@@ -1008,7 +872,7 @@ private:
 		return true;
 	}
 
-	bool rmdir_cb(mavros::FileRemoveDir::Request &req,
+	bool FTPPlugin::rmdir_cb(mavros::FileRemoveDir::Request &req,
 			mavros::FileRemoveDir::Response &res) {
 		SERVICE_IDLE_CHECK();
 
@@ -1019,7 +883,7 @@ private:
 		return true;
 	}
 
-	bool checksum_cb(mavros::FileChecksum::Request &req,
+	bool FTPPlugin::checksum_cb(mavros::FileChecksum::Request &req,
 			mavros::FileChecksum::Response &res) {
 		SERVICE_IDLE_CHECK();
 
@@ -1037,12 +901,11 @@ private:
 	 * @brief Reset communication on both sides.
 	 * @note This call break other calls, so use carefully.
 	 */
-	bool reset_cb(std_srvs::Empty::Request &req,
+	bool FTPPlugin::reset_cb(std_srvs::Empty::Request &req,
 			std_srvs::Empty::Response &res) {
 		send_reset();
 		return true;
 	}
-};
 
 }; // namespace mavplugin
 

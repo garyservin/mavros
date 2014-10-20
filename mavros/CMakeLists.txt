@@ -172,6 +172,7 @@ add_library(mavros
   src/lib/mavros.cpp
   src/lib/mavlink_diag.cpp
   src/plugins/command.cpp
+  src/plugins/ftp.cpp
   src/plugins/global_position.cpp
   src/plugins/gps.cpp
   src/plugins/imu_pub.cpp
