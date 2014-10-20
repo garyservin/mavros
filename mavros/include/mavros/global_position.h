@@ -38,6 +38,8 @@
 #include <std_msgs/Float64.h>
 #include <std_msgs/Header.h>
 
+#define UINT16_MAX 65535
+
 namespace mavplugin {
 
 /**

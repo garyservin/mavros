@@ -33,6 +33,8 @@
 #include <sensor_msgs/TimeReference.h>
 #include <geometry_msgs/TwistStamped.h>
 
+#define UINT16_MAX 65535
+
 namespace mavplugin {
 
 class GPSInfo : public diagnostic_updater::DiagnosticTask

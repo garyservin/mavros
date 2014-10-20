@@ -26,6 +26,7 @@
 #include <mavros/utils.h>
 #include <mavros/px4_custom_mode.h>
 
+#include <boost/lexical_cast.hpp>
 using namespace mavros;
 
 UAS::UAS() :
@@ -131,7 +132,7 @@ static inline std::string str_mode_px4(uint32_t custom_mode_int) {
 	// clear fields
 	custom_mode.reserved = 0;
 	if (custom_mode.main_mode != px4::custom_mode::MAIN_MODE_AUTO) {
-		ROS_WARN_COND_NAMED(custom_mode.sub_mode != 0, "uas", "PX4: Unknown sub-mode");
+		//ROS_WARN_COND_NAMED(custom_mode.sub_mode != 0, "uas", "PX4: Unknown sub-mode");
 		custom_mode.sub_mode = 0;
 	}
 
@@ -180,7 +181,12 @@ static bool cmode_find_cmap(const cmode_map &cmap, std::string &cmode_str, uint3
 	// 2. try convert integer
 	//! @todo parse CMODE(dec)
 	try {
-		cmode = std::stoi(cmode_str, 0, 0);
+//		cmode = std::stoi(cmode_str, 0, 0);
+        try {
+            cmode = boost::lexical_cast<int>(cmode_str);
+        } catch( boost::bad_lexical_cast const& ) {
+            std::cout << "Error: input string was not valid" << std::endl;
+        }
 		return true;
 	}
 	catch (std::invalid_argument &ex) {
@@ -192,8 +198,8 @@ static bool cmode_find_cmap(const cmode_map &cmap, std::string &cmode_str, uint3
 	for (auto &mode : cmap)
 		os << " " << mode.second;
 
-	ROS_ERROR_STREAM_NAMED("uas", "MODE: Unknown mode: " << cmode_str);
-	ROS_DEBUG_STREAM_NAMED("uas", "MODE: Known modes are:" << os.str());
+//	ROS_ERROR_STREAM_NAMED("uas", "MODE: Unknown mode: " << cmode_str);
+//	ROS_DEBUG_STREAM_NAMED("uas", "MODE: Known modes are:" << os.str());
 
 	return false;
 }
@@ -213,6 +219,6 @@ bool UAS::cmode_from_str(std::string cmode_str, uint32_t &custom_mode) {
 	else if (MAV_AUTOPILOT_PX4 == ap)
 		return cmode_find_cmap(px4_cmode_map, cmode_str, custom_mode);
 
-	ROS_ERROR_NAMED("uas", "MODE: Unsupported FCU");
+	//ROS_ERROR_NAMED("uas", "MODE: Unsupported FCU");
 	return false;
 }

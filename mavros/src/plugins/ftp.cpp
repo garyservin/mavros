@@ -566,7 +566,12 @@ namespace mavplugin {
 			if (sep_it != name_size.end()) {
 				name_size.erase(name_size.begin(), sep_it + 1);
 				if (name_size.size() != 0)
-					ent.size = std::stoi(name_size);
+					//ent.size = std::stoi(name_size);
+					try {
+						ent.size = boost::lexical_cast<int>(name_size);
+					} catch( boost::bad_lexical_cast const& ) {
+						std::cout << "Error: input string was not valid" << std::endl;
+					}
 			}
 
 			ROS_DEBUG_STREAM_NAMED("ftp", "FTP:List File: " << ent.name << " SZ: " << ent.size);

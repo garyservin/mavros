@@ -36,6 +36,8 @@
 #include <mavros/mavconn_udp.h>
 #include <mavros/mavconn_tcp.h>
 
+#include <boost/lexical_cast.hpp>
+
 namespace mavconn {
 
 #if MAVLINK_CRC_EXTRA
@@ -134,7 +136,13 @@ static void url_parse_host(std::string host,
 	}
 
 	port.assign(sep_it + 1, host.end());
-	port_out = std::stoi(port);
+//	port_out = std::stoi(port);
+
+    try {
+        port_out = boost::lexical_cast<int>(port);
+    } catch( boost::bad_lexical_cast const& ) {
+        std::cout << "Error: input string was not valid" << std::endl;
+    }
 }
 
 /**
@@ -165,8 +173,15 @@ static void url_parse_query(std::string query, uint8_t &sysid, uint8_t &compid)
 	sys.assign(ids_it, comma_it);
 	comp.assign(comma_it + 1, query.end());
 
-	sysid = std::stoi(sys);
-	compid = std::stoi(comp);
+//	sysid = std::stoi(sys);
+//	compid = std::stoi(comp);
+
+    try {
+        sysid = boost::lexical_cast<int>(sys);
+        compid = boost::lexical_cast<int>(comp);
+    } catch( boost::bad_lexical_cast const& ) {
+        std::cout << "Error: input string was not valid" << std::endl;
+    }
 
 	ROS_DEBUG_NAMED("mavconn", "URL: found system/component id = [%u, %u]",
 			sysid, compid);
