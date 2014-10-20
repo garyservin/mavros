@@ -36,7 +36,7 @@
 #include <mavros/CommandHome.h>
 #include <mavros/CommandTOL.h>
 
-using namespace mavplugin;
+namespace mavplugin {
 
 
 /**
@@ -69,7 +69,7 @@ std::string const CommandPlugin::get_name() const {
 	return "Command";
 }
 
-const CommandPlugin::message_map get_rx_handlers() {
+const MavRosPlugin::message_map CommandPlugin::get_rx_handlers() {
 	return {
 		MESSAGE_HANDLER(MAVLINK_MSG_ID_COMMAND_ACK, &CommandPlugin::handle_command_ack)
 	};
@@ -297,6 +297,8 @@ bool CommandPlugin::guided_cb(mavros::CommandBool::Request &req,
 			0, 0, 0, 0, 0, 0,
 			res.success, res.result);
 }
+
+}; // namespace mavplugin
 
 PLUGINLIB_EXPORT_CLASS(mavplugin::CommandPlugin, mavplugin::MavRosPlugin)
 
