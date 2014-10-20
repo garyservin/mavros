@@ -76,6 +76,8 @@ private:
 	void plugin_route_cb(const mavlink_message_t *mmsg, uint8_t sysid, uint8_t compid);
 	bool check_in_blacklist(std::string &pl_name);
 	void add_plugin(std::string &pl_name);
+	void add_plugin_simple(boost::shared_ptr<mavplugin::MavRosPlugin> plugin);
+	void add_plugins();
 	void terminate_cb();
 	void startup_px4_usb_quirk(void);
 	void log_connect_change(bool connected);

@@ -171,6 +171,7 @@ add_library(mavros
   src/lib/uas.cpp
   src/lib/mavros.cpp
   src/lib/mavlink_diag.cpp
+  src/plugins/command.cpp
 )
 add_dependencies(mavros
   mavros_generate_messages_cpp

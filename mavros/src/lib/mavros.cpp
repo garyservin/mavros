@@ -25,6 +25,7 @@
 #include <ros/console.h>
 #include <mavros/utils.h>
 #include <fnmatch.h>
+#include <mavros/command.h>
 
 using namespace mavros;
 using namespace mavconn;
@@ -113,8 +114,9 @@ MavRos::MavRos(const ros::NodeHandle &nh_) :
 	mav_uas.sig_connection_changed.connect(boost::bind(&MavlinkDiag::set_connection_status, &fcu_link_diag, _1));
 	mav_uas.sig_connection_changed.connect(boost::bind(&MavRos::log_connect_change, this, _1));
 
-	for (auto &name : plugin_loader.getDeclaredClasses())
-		add_plugin(name);
+//	for (auto &name : plugin_loader.getDeclaredClasses())
+//		add_plugin(name);
+	add_plugins();
 
 	if (px4_usb_quirk)
 		startup_px4_usb_quirk();
@@ -199,6 +201,43 @@ void MavRos::add_plugin(std::string &pl_name) {
 	} catch (pluginlib::PluginlibException &ex) {
 		ROS_ERROR_STREAM("Plugin [alias " << pl_name << "] load exception: " << ex.what());
 	}
+}
+
+void MavRos::add_plugin_simple(boost::shared_ptr<mavplugin::MavRosPlugin> plugin) {
+
+	plugin->initialize(mav_uas, node_handle, diag_updater);
+	loaded_plugins.push_back(plugin);
+	std::string repr_name = plugin->get_name();
+
+	ROS_INFO_STREAM("Plugin " << repr_name << " loaded and initialized");
+
+	for (auto &pair : plugin->get_rx_handlers()) {
+		ROS_DEBUG("Route msgid %d to %s", pair.first, repr_name.c_str());
+		message_route_table[pair.first].connect(pair.second);
+	}
+}
+
+void MavRos::add_plugins() {
+	boost::shared_ptr<mavplugin::MavRosPlugin> plugin;
+
+	plugin = boost::make_shared<mavplugin::CommandPlugin>();
+	add_plugin_simple(plugin);
+
+/*	plugin = boost::make_shared<mavlink::GlobalPositionPlugin>();
+	add_plugin_simple(plugin);
+
+	plugin = boost::make_shared<mavlink::GPSPlugin>();
+	add_plugin_simple(plugin);
+
+	plugin = boost::make_shared<mavlink::IMUPubPlugin>();
+	add_plugin_simple(plugin);
+
+	plugin = boost::make_shared<mavlink::LocalPositionPlugin>();
+	add_plugin_simple(plugin);
+
+	plugin = boost::make_shared<mavlink::ParamPlugin>();
+	add_plugin_simple(plugin);
+*/
 }
 
 void MavRos::terminate_cb() {
