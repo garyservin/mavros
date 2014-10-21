@@ -181,6 +181,7 @@ add_library(mavros
   src/plugins/safety_area.cpp
   src/plugins/setpoint_accel.cpp
   src/plugins/setpoint_attitude.cpp
+  src/plugins/setpoint_position.cpp
 )
 
 add_dependencies(mavros

@@ -24,10 +24,7 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include <mavros/mavros_plugin.h>
-#include <mavros/setpoint_mixin.h>
-
-#include <geometry_msgs/PoseStamped.h>
+#include <mavros/setpoint_position.h>
 
 namespace mavplugin {
 
@@ -36,16 +33,12 @@ namespace mavplugin {
  *
  * Send setpoint positions to FCU controller.
  */
-class SetpointPositionPlugin : public MavRosPlugin,
-	private SetPositionTargetLocalNEDMixin<SetpointPositionPlugin>,
-	private TFListenerMixin<SetpointPositionPlugin> {
-public:
-	SetpointPositionPlugin() :
+	SetpointPositionPlugin::SetpointPositionPlugin() :
 		uas(nullptr),
 		tf_rate(10.0)
 	{ };
 
-	void initialize(UAS &uas_,
+	void SetpointPositionPlugin::initialize(UAS &uas_,
 			ros::NodeHandle &nh,
 			diagnostic_updater::Updater &diag_updater)
 	{
@@ -69,26 +62,13 @@ public:
 		}
 	}
 
-	const std::string get_name() const {
+	const std::string SetpointPositionPlugin::get_name() const {
 		return "SetpointPosition";
 	}
 
-	const message_map get_rx_handlers() {
+	const MavRosPlugin::message_map SetpointPositionPlugin::get_rx_handlers() {
 		return { /* Rx disabled */ };
 	}
-
-private:
-	friend class SetPositionTargetLocalNEDMixin;
-	friend class TFListenerMixin;
-	UAS *uas;
-
-	ros::NodeHandle sp_nh;
-	ros::Subscriber setpoint_sub;
-
-	std::string frame_id;
-	std::string child_frame_id;
-
-	double tf_rate;
 
 	/* -*- mid-level helpers -*- */
 
@@ -97,7 +77,7 @@ private:
 	 *
 	 * Note: send only XYZ, Yaw
 	 */
-	void send_setpoint_transform(const tf::Transform &transform, const ros::Time &stamp) {
+	void SetpointPositionPlugin::send_setpoint_transform(const tf::Transform &transform, const ros::Time &stamp) {
 		// ENU frame
 		tf::Vector3 origin = transform.getOrigin();
 		tf::Quaternion q = transform.getRotation();
@@ -121,12 +101,11 @@ private:
 
 	/* common TF listener moved to mixin */
 
-	void setpoint_cb(const geometry_msgs::PoseStamped::ConstPtr &req) {
+	void SetpointPositionPlugin::setpoint_cb(const geometry_msgs::PoseStamped::ConstPtr &req) {
 		tf::Transform transform;
 		poseMsgToTF(req->pose, transform);
 		send_setpoint_transform(transform, req->header.stamp);
 	}
-};
 
 }; // namespace mavplugin
 
