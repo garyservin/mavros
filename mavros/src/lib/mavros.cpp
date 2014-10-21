@@ -40,6 +40,7 @@
 #include <mavros/setpoint_velocity.h>
 #include <mavros/sys_status.h>
 #include <mavros/sys_time.h>
+#include <mavros/vfr_hud.h>
 
 using namespace mavros;
 using namespace mavconn;
@@ -247,6 +248,9 @@ void MavRos::add_plugins() {
 	add_plugin_simple(plugin);
 
 	plugin = boost::make_shared<mavplugin::SystemTimePlugin>();
+	add_plugin_simple(plugin);
+
+	plugin = boost::make_shared<mavplugin::VfrHudPlugin>();
 	add_plugin_simple(plugin);
 }
 

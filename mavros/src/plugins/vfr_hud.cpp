@@ -24,26 +24,21 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include <angles/angles.h>
-#include <mavros/mavros_plugin.h>
 
-#include <mavros/VFR_HUD.h>
-#include <geometry_msgs/TwistStamped.h>
+#include <mavros/vfr_hud.h>
 
 namespace mavplugin {
 
 /**
  * @brief VFR HUD plugin.
  */
-class VfrHudPlugin : public MavRosPlugin {
-public:
-	VfrHudPlugin()
+	VfrHudPlugin::VfrHudPlugin()
 	{ }
 
 	/**
 	 * Plugin initializer. Constructor should not do this.
 	 */
-	void initialize(UAS &uas,
+	void VfrHudPlugin::initialize(UAS &uas,
 			ros::NodeHandle &nh,
 			diagnostic_updater::Updater &diag_updater)
 	{
@@ -54,11 +49,11 @@ public:
 #endif
 	}
 
-	std::string const get_name() const {
+	std::string const VfrHudPlugin::get_name() const {
 		return "VFRHUD";
 	}
 
-	const message_map get_rx_handlers() {
+	const MavRosPlugin::message_map VfrHudPlugin::get_rx_handlers() {
 		return {
 			MESSAGE_HANDLER(MAVLINK_MSG_ID_VFR_HUD, &VfrHudPlugin::handle_vfr_hud),
 #ifdef MAVLINK_MSG_ID_WIND
@@ -67,11 +62,8 @@ public:
 		};
 	}
 
-private:
-	ros::Publisher vfr_pub;
-	ros::Publisher wind_pub;
 
-	void handle_vfr_hud(const mavlink_message_t *msg, uint8_t sysid, uint8_t compid) {
+	void VfrHudPlugin::handle_vfr_hud(const mavlink_message_t *msg, uint8_t sysid, uint8_t compid) {
 		mavlink_vfr_hud_t vfr_hud;
 		mavlink_msg_vfr_hud_decode(msg, &vfr_hud);
 
@@ -91,7 +83,7 @@ private:
 	/**
 	 * Handle APM specific wind direction estimation message
 	 */
-	void handle_wind(const mavlink_message_t *msg, uint8_t sysid, uint8_t compid) {
+	void VfrHudPlugin::handle_wind(const mavlink_message_t *msg, uint8_t sysid, uint8_t compid) {
 		mavlink_wind_t wind;
 		mavlink_msg_wind_decode(msg, &wind);
 
@@ -108,7 +100,6 @@ private:
 		wind_pub.publish(twist);
 	}
 #endif
-};
 
 }; // namespace mavplugin
 

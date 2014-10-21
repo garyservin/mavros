@@ -185,6 +185,7 @@ add_library(mavros
   src/plugins/setpoint_velocity.cpp
   src/plugins/sys_status.cpp
   src/plugins/sys_time.cpp
+  src/plugins/vfr_hud.cpp
 )
 
 add_dependencies(mavros
