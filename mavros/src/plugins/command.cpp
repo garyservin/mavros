@@ -290,5 +290,3 @@ bool CommandPlugin::guided_cb(mavros::CommandBool::Request &req,
 
 }; // namespace mavplugin
 
-PLUGINLIB_EXPORT_CLASS(mavplugin::CommandPlugin, mavplugin::MavRosPlugin)
-

@@ -43,7 +43,6 @@ MavRos::MavRos(const ros::NodeHandle &nh_) :
 	mavlink_node_handle("/mavlink"), // for compatible reasons
 	fcu_link_diag("FCU connection"),
 	gcs_link_diag("GCS bridge"),
-	plugin_loader("mavros", "mavplugin::MavRosPlugin"),
 	message_route_table{}
 {
 	std::string fcu_url, gcs_url;
