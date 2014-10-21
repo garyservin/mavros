@@ -27,7 +27,6 @@
 #include <chrono>
 #include <condition_variable>
 #include <mavros/mavros_plugin.h>
-#include <pluginlib/class_list_macros.h>
 
 #include <mavros/WaypointList.h>
 #include <mavros/WaypointSetCurrent.h>
@@ -849,6 +848,4 @@ private:
 };
 
 }; // namespace mavplugin
-
-PLUGINLIB_EXPORT_CLASS(mavplugin::WaypointPlugin, mavplugin::MavRosPlugin)
 

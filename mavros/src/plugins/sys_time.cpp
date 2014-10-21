@@ -25,7 +25,6 @@
  */
 
 #include <mavros/mavros_plugin.h>
-#include <pluginlib/class_list_macros.h>
 
 #include <sensor_msgs/TimeReference.h>
 #include <std_msgs/Duration.h>
@@ -255,4 +254,3 @@ private:
 
 }; // namespace mavplugin
 
-PLUGINLIB_EXPORT_CLASS(mavplugin::SystemTimePlugin, mavplugin::MavRosPlugin)

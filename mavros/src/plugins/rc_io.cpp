@@ -25,7 +25,6 @@
  */
 
 #include <mavros/mavros_plugin.h>
-#include <pluginlib/class_list_macros.h>
 
 #include <mavros/RCIn.h>
 #include <mavros/RCOut.h>
@@ -233,6 +232,4 @@ private:
 };
 
 }; // namespace mavplugin
-
-PLUGINLIB_EXPORT_CLASS(mavplugin::RCIOPlugin, mavplugin::MavRosPlugin)
 

@@ -29,7 +29,6 @@
 
 #include <array>
 #include <ros/ros.h>
-#include <pluginlib/class_loader.h>
 #include <mavros/mavconn_interface.h>
 #include <mavros/mavros_plugin.h>
 #include <mavros/mavlink_diag.h>
@@ -64,7 +63,6 @@ private:
 	MavlinkDiag fcu_link_diag;
 	MavlinkDiag gcs_link_diag;
 
-	pluginlib::ClassLoader<mavplugin::MavRosPlugin> plugin_loader;
 	std::vector<mavplugin::MavRosPlugin::Ptr> loaded_plugins;
 	std::vector<std::string> plugin_blacklist;
 	std::array<mavconn::MAVConnInterface::MessageSig, 256>

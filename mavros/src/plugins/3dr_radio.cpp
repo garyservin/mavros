@@ -25,7 +25,6 @@
  */
 
 #include <mavros/mavros_plugin.h>
-#include <pluginlib/class_list_macros.h>
 
 #include <mavros/RadioStatus.h>
 
@@ -177,6 +176,4 @@ private:
 };
 
 }; // namespace mavplugin
-
-PLUGINLIB_EXPORT_CLASS(mavplugin::TDRRadioPlugin, mavplugin::MavRosPlugin)
 

@@ -28,7 +28,6 @@
 
 #include <cmath>
 #include <mavros/mavros_plugin.h>
-#include <pluginlib/class_list_macros.h>
 #include <tf/transform_datatypes.h>
 
 #include <sensor_msgs/Imu.h>

@@ -9,7 +9,6 @@ find_package(catkin REQUIRED COMPONENTS
   diagnostic_updater
   message_generation
   message_runtime
-  pluginlib
   roscpp
   sensor_msgs
   std_msgs
@@ -132,7 +131,7 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES mavconn mavros
-  CATKIN_DEPENDS diagnostic_msgs diagnostic_updater pluginlib roscpp sensor_msgs std_msgs tf geometry_msgs
+  CATKIN_DEPENDS diagnostic_msgs diagnostic_updater roscpp sensor_msgs std_msgs tf geometry_msgs
   DEPENDS Boost mavlink
   CFG_EXTRAS mavros-extras.cmake
 )

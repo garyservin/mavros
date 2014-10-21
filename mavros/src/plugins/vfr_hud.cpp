@@ -26,7 +26,6 @@
 
 #include <angles/angles.h>
 #include <mavros/mavros_plugin.h>
-#include <pluginlib/class_list_macros.h>
 
 #include <mavros/VFR_HUD.h>
 #include <geometry_msgs/TwistStamped.h>
@@ -112,6 +111,4 @@ private:
 };
 
 }; // namespace mavplugin
-
-PLUGINLIB_EXPORT_CLASS(mavplugin::VfrHudPlugin, mavplugin::MavRosPlugin)
 

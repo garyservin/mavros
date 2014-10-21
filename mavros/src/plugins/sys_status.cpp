@@ -25,7 +25,6 @@
  */
 
 #include <mavros/mavros_plugin.h>
-#include <pluginlib/class_list_macros.h>
 
 #include <mavros/State.h>
 #include <mavros/BatteryStatus.h>
@@ -613,6 +612,4 @@ private:
 };
 
 }; // namespace mavplugin
-
-PLUGINLIB_EXPORT_CLASS(mavplugin::SystemStatusPlugin, mavplugin::MavRosPlugin)
 

@@ -26,7 +26,6 @@
  */
 
 #include <mavros/mavros_plugin.h>
-#include <pluginlib/class_list_macros.h>
 
 #include <geometry_msgs/PolygonStamped.h>
 
@@ -154,4 +153,3 @@ private:
 
 }; // namespace mavplugin
 
-PLUGINLIB_EXPORT_CLASS(mavplugin::SafetyAreaPlugin, mavplugin::MavRosPlugin)

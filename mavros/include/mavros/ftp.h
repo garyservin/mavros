@@ -28,7 +28,6 @@
 #include <cerrno>
 #include <condition_variable>
 #include <mavros/mavros_plugin.h>
-#include <pluginlib/class_list_macros.h>
 
 #include <std_srvs/Empty.h>
 #include <mavros/FileEntry.h>

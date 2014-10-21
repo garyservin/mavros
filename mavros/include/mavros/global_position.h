@@ -28,7 +28,6 @@
 
 #include <mavros/mavros_plugin.h>
 #include <mavros/gps_conversions.h>
-#include <pluginlib/class_list_macros.h>
 
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_datatypes.h>
