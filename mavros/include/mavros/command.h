@@ -36,6 +36,8 @@
 #include <mavros/CommandHome.h>
 #include <mavros/CommandTOL.h>
 
+#include <std_msgs/Bool.h>
+
 namespace mavplugin {
 
 class CommandTransaction {
@@ -82,6 +84,8 @@ private:
 	ros::ServiceServer land_srv;
 	ros::ServiceServer guided_srv;
 
+	ros::Publisher record_pub;
+
 	std::list<CommandTransaction *> ack_waiting_list;
 	static constexpr int ACK_TIMEOUT_MS = 5000;
 
@@ -90,6 +94,8 @@ private:
 	/* -*- message handlers -*- */
 
 	void handle_command_ack(const mavlink_message_t *msg, uint8_t sysid, uint8_t compid);
+
+	void handle_command_int(const mavlink_message_t *msg, uint8_t sysid, uint8_t compid);
 
 	/* -*- mid-level functions -*- */
 

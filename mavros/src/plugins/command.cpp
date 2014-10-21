@@ -53,6 +53,8 @@ void CommandPlugin::initialize(UAS &uas_,
 	takeoff_srv = cmd_nh.advertiseService("takeoff", &CommandPlugin::takeoff_cb, this);
 	land_srv = cmd_nh.advertiseService("land", &CommandPlugin::land_cb, this);
 	guided_srv = cmd_nh.advertiseService("guided_enable", &CommandPlugin::guided_cb, this);
+
+	record_pub = nh.advertise<std_msgs::Bool>("record", 10, true);
 }
 
 std::string const CommandPlugin::get_name() const {
@@ -61,7 +63,8 @@ std::string const CommandPlugin::get_name() const {
 
 const MavRosPlugin::message_map CommandPlugin::get_rx_handlers() {
 	return {
-		MESSAGE_HANDLER(MAVLINK_MSG_ID_COMMAND_ACK, &CommandPlugin::handle_command_ack)
+		MESSAGE_HANDLER(MAVLINK_MSG_ID_COMMAND_ACK, &CommandPlugin::handle_command_ack),
+		MESSAGE_HANDLER(MAVLINK_MSG_ID_COMMAND_INT, &CommandPlugin::handle_command_int),
 	};
 }
 
@@ -82,6 +85,26 @@ void CommandPlugin::handle_command_ack(const mavlink_message_t *msg, uint8_t sys
 
 	ROS_WARN_THROTTLE_NAMED(10, "cmd", "Unexpected command %u, result %u",
 		ack.command, ack.result);
+}
+
+void CommandPlugin::handle_command_int(const mavlink_message_t *msg, uint8_t sysid, uint8_t compid) {
+	mavlink_command_int_t int_;
+	mavlink_msg_command_int_decode(msg, &int_);
+
+	ROS_INFO_NAMED("command_int", "Received COMMAND_INT message with command = %u", int_.command);
+
+	if(int_.command == MAV_CMD_VIDEO_START_CAPTURE || int_.command == MAV_CMD_VIDEO_STOP_CAPTURE){
+		std_msgs::BoolPtr record = boost::make_shared<std_msgs::Bool>();
+		if(int_.command == MAV_CMD_VIDEO_START_CAPTURE){
+			float camera_id = int_.param1;
+			float fps = int_.param2;
+			float resolution_mpx = int_.param3;
+			record->data = true;
+		} else {
+			record->data = false;
+		}
+		record_pub.publish(record);
+	}
 }
 
 /* -*- mid-level functions -*- */
