@@ -33,6 +33,8 @@
 #include <mavros/local_position.h>
 #include <mavros/param_plugin.h>
 #include <mavros/rc_io.h>
+#include <mavros/safety_area.h>
+#include <mavros/setpoint_accel.h>
 
 using namespace mavros;
 using namespace mavconn;
@@ -219,6 +221,12 @@ void MavRos::add_plugins() {
 	add_plugin_simple(plugin);
 
 	plugin = boost::make_shared<mavplugin::RCIOPlugin>();
+	add_plugin_simple(plugin);
+
+	plugin = boost::make_shared<mavplugin::SafetyAreaPlugin>();
+	add_plugin_simple(plugin);
+
+	plugin = boost::make_shared<mavplugin::SetpointAccelerationPlugin>();
 	add_plugin_simple(plugin);
 }
 

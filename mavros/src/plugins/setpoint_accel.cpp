@@ -25,11 +25,7 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include <mavros/utils.h>
-#include <mavros/mavros_plugin.h>
-#include <mavros/setpoint_mixin.h>
-
-#include <geometry_msgs/Vector3Stamped.h>
+#include <mavros/setpoint_accel.h>
 
 namespace mavplugin {
 
@@ -38,15 +34,12 @@ namespace mavplugin {
  *
  * Send setpoint accelerations/forces to FCU controller.
  */
-class SetpointAccelerationPlugin : public MavRosPlugin,
-	private SetPositionTargetLocalNEDMixin<SetpointAccelerationPlugin> {
-public:
-	SetpointAccelerationPlugin() :
+	SetpointAccelerationPlugin::SetpointAccelerationPlugin() :
 		uas(nullptr),
 		send_force(false)
 	{ };
 
-	void initialize(UAS &uas_,
+	void SetpointAccelerationPlugin::initialize(UAS &uas_,
 			ros::NodeHandle &nh,
 			diagnostic_updater::Updater &diag_updater)
 	{
@@ -58,22 +51,13 @@ public:
 		accel_sub = sp_nh.subscribe("accel", 10, &SetpointAccelerationPlugin::accel_cb, this);
 	}
 
-	const std::string get_name() const {
+	const std::string SetpointAccelerationPlugin::get_name() const {
 		return "SetpointAcceleration";
 	}
 
-	const message_map get_rx_handlers() {
+	const MavRosPlugin::message_map SetpointAccelerationPlugin::get_rx_handlers() {
 		return { /* Rx disabled */ };
 	}
-
-private:
-	friend class SetPositionTargetLocalNEDMixin;
-	UAS *uas;
-
-	ros::NodeHandle sp_nh;
-	ros::Subscriber accel_sub;
-
-	bool send_force;
 
 	/* -*- mid-level helpers -*- */
 
@@ -82,7 +66,7 @@ private:
 	 *
 	 * Note: send only AFX AFY AFZ. ENU frame.
 	 */
-	void send_setpoint_acceleration(const ros::Time &stamp, float afx, float afy, float afz) {
+	void SetpointAccelerationPlugin::send_setpoint_acceleration(const ros::Time &stamp, float afx, float afy, float afz) {
 
 		/* Documentation start from bit 1 instead 0.
 		 * Ignore position and velocity vectors, yaw and yaw rate
@@ -104,13 +88,12 @@ private:
 
 	/* -*- callbacks -*- */
 
-	void accel_cb(const geometry_msgs::Vector3Stamped::ConstPtr &req) {
+	void SetpointAccelerationPlugin::accel_cb(const geometry_msgs::Vector3Stamped::ConstPtr &req) {
 		send_setpoint_acceleration(req->header.stamp,
 					    req->vector.x,
 					    req->vector.y,
 					    req->vector.z);
 	}
-};
 
 }; // namespace mavplugin
 
