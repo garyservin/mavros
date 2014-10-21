@@ -24,12 +24,7 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include <mavros/mavros_plugin.h>
-
-#include <mavros/State.h>
-#include <mavros/BatteryStatus.h>
-#include <mavros/StreamRate.h>
-#include <mavros/SetMode.h>
+#include <mavros/sys_status.h>
 
 namespace mavplugin {
 
@@ -38,10 +33,7 @@ namespace mavplugin {
  *
  * Based on diagnistic_updater::FrequencyStatus
  */
-class HeartbeatStatus : public diagnostic_updater::DiagnosticTask
-{
-public:
-	HeartbeatStatus(const std::string name, size_t win_size) :
+	HeartbeatStatus::HeartbeatStatus(const std::string name, size_t win_size) :
 		diagnostic_updater::DiagnosticTask(name),
 		window_size_(win_size),
 		min_freq_(0.2),
@@ -54,7 +46,7 @@ public:
 		clear();
 	}
 
-	void clear() {
+	void HeartbeatStatus::clear() {
 		lock_guard lock(mutex);
 		ros::Time curtime = ros::Time::now();
 		count_ = 0;
@@ -68,13 +60,13 @@ public:
 		hist_indx_ = 0;
 	}
 
-	void tick(mavlink_heartbeat_t &hb_struct) {
+	void HeartbeatStatus::tick(mavlink_heartbeat_t &hb_struct) {
 		lock_guard lock(mutex);
 		count_++;
 		last_hb = hb_struct;
 	}
 
-	void run(diagnostic_updater::DiagnosticStatusWrapper &stat) {
+	void HeartbeatStatus::run(diagnostic_updater::DiagnosticStatusWrapper &stat) {
 		lock_guard lock(mutex);
 		ros::Time curtime = ros::Time::now();
 		int curseq = count_;
@@ -109,34 +101,18 @@ public:
 		stat.addf("Autopilot system status", "%u", last_hb.system_status);
 	}
 
-private:
-	int count_;
-	std::vector<ros::Time> times_;
-	std::vector<int> seq_nums_;
-	int hist_indx_;
-	std::recursive_mutex mutex;
-	const size_t window_size_;
-	const double min_freq_;
-	const double max_freq_;
-	const double tolerance_;
-	mavlink_heartbeat_t last_hb;
-};
 
-
-class SystemStatusDiag : public diagnostic_updater::DiagnosticTask
-{
-public:
-	SystemStatusDiag(const std::string name) :
+	SystemStatusDiag::SystemStatusDiag(const std::string name) :
 		diagnostic_updater::DiagnosticTask(name),
 		last_st{}
 	{ };
 
-	void set(mavlink_sys_status_t &st) {
+	void SystemStatusDiag::set(mavlink_sys_status_t &st) {
 		lock_guard lock(mutex);
 		last_st = st;
 	}
 
-	void run(diagnostic_updater::DiagnosticStatusWrapper &stat) {
+	void SystemStatusDiag::run(diagnostic_updater::DiagnosticStatusWrapper &stat) {
 		lock_guard lock(mutex);
 
 		if ((last_st.onboard_control_sensors_health & last_st.onboard_control_sensors_enabled)
@@ -189,16 +165,8 @@ public:
 		stat.addf("Errors count #4", "%d", last_st.errors_count4);
 	}
 
-private:
-	std::recursive_mutex mutex;
-	mavlink_sys_status_t last_st;
-};
 
-
-class BatteryStatusDiag : public diagnostic_updater::DiagnosticTask
-{
-public:
-	BatteryStatusDiag(const std::string name) :
+	BatteryStatusDiag::BatteryStatusDiag(const std::string name) :
 		diagnostic_updater::DiagnosticTask(name),
 		voltage(-1.0),
 		current(0.0),
@@ -206,19 +174,19 @@ public:
 		min_voltage(6)
 	{};
 
-	void set_min_voltage(float volt) {
+	void BatteryStatusDiag::set_min_voltage(float volt) {
 		lock_guard lock(mutex);
 		min_voltage = volt;
 	}
 
-	void set(float volt, float curr, float rem) {
+	void BatteryStatusDiag::set(float volt, float curr, float rem) {
 		lock_guard lock(mutex);
 		voltage = volt;
 		current = curr;
 		remaining = rem;
 	}
 
-	void run(diagnostic_updater::DiagnosticStatusWrapper &stat) {
+	void BatteryStatusDiag::run(diagnostic_updater::DiagnosticStatusWrapper &stat) {
 		lock_guard lock(mutex);
 
 		if (voltage < 0)
@@ -233,31 +201,20 @@ public:
 		stat.addf("Remaining", "%.1f", remaining * 100);
 	}
 
-private:
-	std::recursive_mutex mutex;
-	float voltage;
-	float current;
-	float remaining;
-	float min_voltage;
-};
 
-
-class MemInfo : public diagnostic_updater::DiagnosticTask
-{
-public:
-	MemInfo(const std::string name) :
+	MemInfo::MemInfo(const std::string name) :
 		diagnostic_updater::DiagnosticTask(name),
 		freemem(-1),
 		brkval(0)
 	{};
 
-	void set(uint16_t f, uint16_t b) {
+	void MemInfo::set(uint16_t f, uint16_t b) {
 		lock_guard lock(mutex);
 		freemem = f;
 		brkval = b;
 	}
 
-	void run(diagnostic_updater::DiagnosticStatusWrapper &stat) {
+	void MemInfo::run(diagnostic_updater::DiagnosticStatusWrapper &stat) {
 		lock_guard lock(mutex);
 
 		if (freemem < 0)
@@ -271,30 +228,21 @@ public:
 		stat.addf("Heap top", "0x%04X", brkval);
 	}
 
-private:
-	std::recursive_mutex mutex;
-	ssize_t freemem;
-	uint16_t brkval;
-};
 
-
-class HwStatus : public diagnostic_updater::DiagnosticTask
-{
-public:
-	HwStatus(const std::string name) :
+	HwStatus::HwStatus(const std::string name) :
 		diagnostic_updater::DiagnosticTask(name),
 		vcc(-1.0),
 		i2cerr(0),
 		i2cerr_last(0)
 	{};
 
-	void set(uint16_t v, uint8_t e) {
+	void HwStatus::set(uint16_t v, uint8_t e) {
 		lock_guard lock(mutex);
 		vcc = v / 1000.0;
 		i2cerr = e;
 	}
 
-	void run(diagnostic_updater::DiagnosticStatusWrapper &stat) {
+	void HwStatus::run(diagnostic_updater::DiagnosticStatusWrapper &stat) {
 		lock_guard lock(mutex);
 
 		if (vcc < 0)
@@ -312,22 +260,12 @@ public:
 		stat.addf("I2C errors", "%zu", i2cerr);
 	}
 
-private:
-	std::recursive_mutex mutex;
-	float vcc;
-	size_t i2cerr;
-	size_t i2cerr_last;
-};
-
 
 /**
  * @brief System status plugin.
  * Required for most applications.
  */
-class SystemStatusPlugin : public MavRosPlugin
-{
-public:
-	SystemStatusPlugin() :
+	SystemStatusPlugin::SystemStatusPlugin() :
 		uas(nullptr),
 		hb_diag("Heartbeat", 10),
 		mem_diag("APM Memory"),
@@ -336,7 +274,7 @@ public:
 		batt_diag("Battery")
 	{};
 
-	void initialize(UAS &uas_,
+	void SystemStatusPlugin::initialize(UAS &uas_,
 			ros::NodeHandle &nh,
 			diagnostic_updater::Updater &diag_updater)
 	{
@@ -385,11 +323,11 @@ public:
 		mode_srv = nh.advertiseService("set_mode", &SystemStatusPlugin::set_mode_cb, this);
 	}
 
-	const std::string get_name() const {
+	const std::string SystemStatusPlugin::get_name() const {
 		return "SystemStatus";
 	}
 
-	const message_map get_rx_handlers() {
+	const MavRosPlugin::message_map SystemStatusPlugin::get_rx_handlers() {
 		return {
 			MESSAGE_HANDLER(MAVLINK_MSG_ID_HEARTBEAT, &SystemStatusPlugin::handle_heartbeat),
 			MESSAGE_HANDLER(MAVLINK_MSG_ID_SYS_STATUS, &SystemStatusPlugin::handle_sys_status),
@@ -403,21 +341,6 @@ public:
 		};
 	}
 
-private:
-	UAS *uas;
-	HeartbeatStatus hb_diag;
-	MemInfo mem_diag;
-	HwStatus hwst_diag;
-	SystemStatusDiag sys_diag;
-	BatteryStatusDiag batt_diag;
-	ros::Timer timeout_timer;
-	ros::Timer heartbeat_timer;
-
-	ros::Publisher state_pub;
-	ros::Publisher batt_pub;
-	ros::ServiceServer rate_srv;
-	ros::ServiceServer mode_srv;
-
 	/* -*- mid-level helpers -*- */
 
 	/**
@@ -425,7 +348,7 @@ private:
 	 *
 	 * @param[in] severity  Levels defined in common.xml
 	 */
-	void process_statustext_normal(uint8_t severity, std::string &text) {
+	void SystemStatusPlugin::process_statustext_normal(uint8_t severity, std::string &text) {
 		switch (severity) {
 		case MAV_SEVERITY_EMERGENCY:
 		case MAV_SEVERITY_ALERT:
@@ -456,7 +379,7 @@ private:
 	 *
 	 * @param[in] severity  APM levels.
 	 */
-	void process_statustext_apm_quirk(uint8_t severity, std::string &text) {
+	void SystemStatusPlugin::process_statustext_apm_quirk(uint8_t severity, std::string &text) {
 		switch (severity) {
 		case 1: // SEVERITY_LOW
 			ROS_INFO_STREAM_NAMED("fcu", "FCU: " << text);
@@ -482,7 +405,7 @@ private:
 
 	/* -*- message handlers -*- */
 
-	void handle_heartbeat(const mavlink_message_t *msg, uint8_t sysid, uint8_t compid) {
+	void SystemStatusPlugin::handle_heartbeat(const mavlink_message_t *msg, uint8_t sysid, uint8_t compid) {
 		mavlink_heartbeat_t hb;
 		mavlink_msg_heartbeat_decode(msg, &hb);
 		hb_diag.tick(hb);
@@ -502,7 +425,7 @@ private:
 		state_pub.publish(state_msg);
 	}
 
-	void handle_sys_status(const mavlink_message_t *msg, uint8_t sysid, uint8_t compid) {
+	void SystemStatusPlugin::handle_sys_status(const mavlink_message_t *msg, uint8_t sysid, uint8_t compid) {
 		mavlink_sys_status_t stat;
 		mavlink_msg_sys_status_decode(msg, &stat);
 
@@ -521,7 +444,7 @@ private:
 		batt_pub.publish(batt_msg);
 	}
 
-	void handle_statustext(const mavlink_message_t *msg, uint8_t sysid, uint8_t compid) {
+	void SystemStatusPlugin::handle_statustext(const mavlink_message_t *msg, uint8_t sysid, uint8_t compid) {
 		mavlink_statustext_t textm;
 		mavlink_msg_statustext_decode(msg, &textm);
 
@@ -535,7 +458,7 @@ private:
 	}
 
 #ifdef MAVLINK_MSG_ID_MEMINFO
-	void handle_meminfo(const mavlink_message_t *msg, uint8_t sysid, uint8_t compid) {
+	void SystemStatusPlugin::handle_meminfo(const mavlink_message_t *msg, uint8_t sysid, uint8_t compid) {
 		mavlink_meminfo_t mem;
 		mavlink_msg_meminfo_decode(msg, &mem);
 		mem_diag.set(mem.freemem, mem.brkval);
@@ -543,7 +466,7 @@ private:
 #endif
 
 #ifdef MAVLINK_MSG_ID_HWSTATUS
-	void handle_hwstatus(const mavlink_message_t *msg, uint8_t sysid, uint8_t compid) {
+	void SystemStatusPlugin::handle_hwstatus(const mavlink_message_t *msg, uint8_t sysid, uint8_t compid) {
 		mavlink_hwstatus_t hwst;
 		mavlink_msg_hwstatus_decode(msg, &hwst);
 		hwst_diag.set(hwst.Vcc, hwst.I2Cerr);
@@ -552,11 +475,11 @@ private:
 
 	/* -*- timer callbacks -*- */
 
-	void timeout_cb(const ros::TimerEvent &event) {
+	void SystemStatusPlugin::timeout_cb(const ros::TimerEvent &event) {
 		uas->update_connection_status(false);
 	}
 
-	void heartbeat_cb(const ros::TimerEvent &event) {
+	void SystemStatusPlugin::heartbeat_cb(const ros::TimerEvent &event) {
 		mavlink_message_t msg;
 		mavlink_msg_heartbeat_pack_chan(UAS_PACK_CHAN(uas), &msg,
 				MAV_TYPE_ONBOARD_CONTROLLER,
@@ -571,7 +494,7 @@ private:
 
 	/* -*- ros callbacks -*- */
 
-	bool set_rate_cb(mavros::StreamRate::Request &req,
+	bool SystemStatusPlugin::set_rate_cb(mavros::StreamRate::Request &req,
 			mavros::StreamRate::Response &res) {
 
 		mavlink_message_t msg;
@@ -586,7 +509,7 @@ private:
 		return true;
 	}
 
-	bool set_mode_cb(mavros::SetMode::Request &req,
+	bool SystemStatusPlugin::set_mode_cb(mavros::SetMode::Request &req,
 			mavros::SetMode::Response &res) {
 		mavlink_message_t msg;
 		uint8_t base_mode = req.base_mode;
@@ -609,7 +532,6 @@ private:
 		res.success = true;
 		return true;
 	}
-};
 
 }; // namespace mavplugin
 
