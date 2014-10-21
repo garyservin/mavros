@@ -25,13 +25,7 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include <mavros/mavros_plugin.h>
-#include <mavros/setpoint_mixin.h>
-
-#include <geometry_msgs/PoseStamped.h>
-#include <geometry_msgs/PoseWithCovarianceStamped.h>
-#include <geometry_msgs/TwistStamped.h>
-#include <std_msgs/Float64.h>
+#include <mavros/setpoint_attitude.h>
 
 namespace mavplugin {
 
@@ -40,16 +34,13 @@ namespace mavplugin {
  *
  * Send setpoint attitude/orientation/thrust to FCU controller.
  */
-class SetpointAttitudePlugin : public MavRosPlugin,
-	private TFListenerMixin<SetpointAttitudePlugin> {
-public:
-	SetpointAttitudePlugin() :
+	SetpointAttitudePlugin::SetpointAttitudePlugin() :
 		uas(nullptr),
 		tf_rate(10.0),
 		reverse_throttle(false)
 	{ };
 
-	void initialize(UAS &uas_,
+	void SetpointAttitudePlugin::initialize(UAS &uas_,
 			ros::NodeHandle &nh,
 			diagnostic_updater::Updater &diag_updater)
 	{
@@ -90,31 +81,17 @@ public:
 		throttle_sub = sp_nh.subscribe("att_throttle", 10, &SetpointAttitudePlugin::throttle_cb, this);
 	}
 
-	const std::string get_name() const {
+	const std::string SetpointAttitudePlugin::get_name() const {
 		return "SetpointAttitude";
 	}
 
-	const message_map get_rx_handlers() {
+	const MavRosPlugin::message_map SetpointAttitudePlugin::get_rx_handlers() {
 		return { /* Rx disabled */ };
 	}
 
-private:
-	friend class TFListenerMixin;
-	UAS *uas;
-
-	ros::NodeHandle sp_nh;
-	ros::Subscriber att_sub;
-	ros::Subscriber throttle_sub;
-
-	std::string frame_id;
-	std::string child_frame_id;
-
-	double tf_rate;
-	bool reverse_throttle;
-
 	/* -*- low-level send -*- */
 
-	void set_attitude_target(uint32_t time_boot_ms,
+	void SetpointAttitudePlugin::set_attitude_target(uint32_t time_boot_ms,
 			uint8_t type_mask,
 			float q[4],
 			float roll_rate, float pitch_rate, float yaw_rate,
@@ -137,7 +114,7 @@ private:
 	 *
 	 * ENU frame.
 	 */
-	void send_attitude_transform(const tf::Transform &transform, const ros::Time &stamp) {
+	void SetpointAttitudePlugin::send_attitude_transform(const tf::Transform &transform, const ros::Time &stamp) {
 		// Thrust + RPY, also bits noumbering started from 1 in docs
 		const uint8_t ignore_all_except_q = (1<<6)|(7<<0);
 		float q[4];
@@ -161,7 +138,7 @@ private:
 	 *
 	 * ENU frame.
 	 */
-	void send_attitude_ang_velocity(const ros::Time &stamp, const float vx, const float vy, const float vz) {
+	void SetpointAttitudePlugin::send_attitude_ang_velocity(const ros::Time &stamp, const float vx, const float vy, const float vz) {
 		// Q + Thrust, also bits noumbering started from 1 in docs
 		const uint8_t ignore_all_except_rpy = (1<<7)|(1<<6);
 		float q[4] = { 1.0, 0.0, 0.0, 0.0 };
@@ -176,7 +153,7 @@ private:
 	/**
 	 * Send throttle to FCU attitude controller
 	 */
-	void send_attitude_throttle(const float throttle) {
+	void SetpointAttitudePlugin::send_attitude_throttle(const float throttle) {
 		// Q + RPY
 		const uint8_t ignore_all_except_throttle = (1<<7)|(7<<0);
 		float q[4] = { 1.0, 0.0, 0.0, 0.0 };
@@ -190,19 +167,19 @@ private:
 
 	/* -*- callbacks -*- */
 
-	void pose_cov_cb(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &req) {
+	void SetpointAttitudePlugin::pose_cov_cb(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &req) {
 		tf::Transform transform;
 		poseMsgToTF(req->pose.pose, transform);
 		send_attitude_transform(transform, req->header.stamp);
 	}
 
-	void pose_cb(const geometry_msgs::PoseStamped::ConstPtr &req) {
+	void SetpointAttitudePlugin::pose_cb(const geometry_msgs::PoseStamped::ConstPtr &req) {
 		tf::Transform transform;
 		poseMsgToTF(req->pose, transform);
 		send_attitude_transform(transform, req->header.stamp);
 	}
 
-	void twist_cb(const geometry_msgs::TwistStamped::ConstPtr &req) {
+	void SetpointAttitudePlugin::twist_cb(const geometry_msgs::TwistStamped::ConstPtr &req) {
 		send_attitude_ang_velocity(
 				req->header.stamp,
 				req->twist.angular.x,
@@ -210,7 +187,7 @@ private:
 				req->twist.angular.z);
 	}
 
-	inline bool is_normalized(float throttle, const float min, const float max) {
+	inline bool SetpointAttitudePlugin::is_normalized(float throttle, const float min, const float max) {
 		if (throttle < min) {
 			ROS_WARN_NAMED("attitude", "Not normalized throttle! Thd(%f) < Min(%f)", throttle, min);
 			return false;
@@ -223,7 +200,7 @@ private:
 		return true;
 	}
 
-	void throttle_cb(const std_msgs::Float64::ConstPtr &req) {
+	void SetpointAttitudePlugin::throttle_cb(const std_msgs::Float64::ConstPtr &req) {
 		float throttle_normalized = req->data;
 
 		// note: && are lazy, is_normalized() should be called only if reverse_throttle are true.
@@ -234,7 +211,6 @@ private:
 
 		send_attitude_throttle(throttle_normalized);
 	}
-};
 
 }; // namespace mavplugin
 
