@@ -182,6 +182,7 @@ add_library(mavros
   src/plugins/setpoint_accel.cpp
   src/plugins/setpoint_attitude.cpp
   src/plugins/setpoint_position.cpp
+  src/plugins/setpoint_velocity.cpp
 )
 
 add_dependencies(mavros

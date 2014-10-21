@@ -25,10 +25,7 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include <mavros/mavros_plugin.h>
-#include <mavros/setpoint_mixin.h>
-
-#include <geometry_msgs/TwistStamped.h>
+#include <mavros/setpoint_velocity.h>
 
 namespace mavplugin {
 
@@ -37,14 +34,11 @@ namespace mavplugin {
  *
  * Send setpoint velocities to FCU controller.
  */
-class SetpointVelocityPlugin : public MavRosPlugin,
-	private SetPositionTargetLocalNEDMixin<SetpointVelocityPlugin> {
-public:
-	SetpointVelocityPlugin() :
+	SetpointVelocityPlugin::SetpointVelocityPlugin() :
 		uas(nullptr)
 	{ };
 
-	void initialize(UAS &uas_,
+	void SetpointVelocityPlugin::initialize(UAS &uas_,
 			ros::NodeHandle &nh,
 			diagnostic_updater::Updater &diag_updater)
 	{
@@ -55,20 +49,13 @@ public:
 		vel_sub = sp_nh.subscribe("cmd_vel", 10, &SetpointVelocityPlugin::vel_cb, this);
 	}
 
-	const std::string get_name() const {
+	const std::string SetpointVelocityPlugin::get_name() const {
 		return "SetpointVelocity";
 	}
 
-	const message_map get_rx_handlers() {
+	const MavRosPlugin::message_map SetpointVelocityPlugin::get_rx_handlers() {
 		return { /* Rx disabled */ };
 	}
-
-private:
-	friend class SetPositionTargetLocalNEDMixin;
-	UAS *uas;
-
-	ros::NodeHandle sp_nh;
-	ros::Subscriber vel_sub;
 
 	/* -*- mid-level helpers -*- */
 
@@ -77,7 +64,7 @@ private:
 	 *
 	 * Note: send only VX VY VZ. ENU frame.
 	 */
-	void send_setpoint_velocity(const ros::Time &stamp, float vx, float vy, float vz, float yaw_rate) {
+	void SetpointVelocityPlugin::send_setpoint_velocity(const ros::Time &stamp, float vx, float vy, float vz, float yaw_rate) {
 
 		/* Documentation start from bit 1 instead 0,
 		 * Ignore position and accel vectors, yaw
@@ -96,14 +83,13 @@ private:
 
 	/* -*- callbacks -*- */
 
-	void vel_cb(const geometry_msgs::TwistStamped::ConstPtr &req) {
+	void SetpointVelocityPlugin::vel_cb(const geometry_msgs::TwistStamped::ConstPtr &req) {
 		send_setpoint_velocity(req->header.stamp,
 					req->twist.linear.x,
 					req->twist.linear.y,
 					req->twist.linear.z,
 					req->twist.angular.z);
 	}
-};
 
 }; // namespace mavplugin
 

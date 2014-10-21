@@ -37,6 +37,7 @@
 #include <mavros/setpoint_accel.h>
 #include <mavros/setpoint_attitude.h>
 #include <mavros/setpoint_position.h>
+#include <mavros/setpoint_velocity.h>
 
 using namespace mavros;
 using namespace mavconn;
@@ -235,6 +236,9 @@ void MavRos::add_plugins() {
 	add_plugin_simple(plugin);
 
 	plugin = boost::make_shared<mavplugin::SetpointPositionPlugin>();
+	add_plugin_simple(plugin);
+
+	plugin = boost::make_shared<mavplugin::SetpointVelocityPlugin>();
 	add_plugin_simple(plugin);
 }
 
