@@ -178,6 +178,7 @@ add_library(mavros
   src/plugins/local_position.cpp
   src/plugins/param.cpp
   src/plugins/rc_io.cpp
+  src/plugins/safety_area.cpp
 )
 
 add_dependencies(mavros

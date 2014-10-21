@@ -25,9 +25,7 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include <mavros/mavros_plugin.h>
-
-#include <geometry_msgs/PolygonStamped.h>
+#include <mavros/safety_area.h>
 
 namespace mavplugin {
 
@@ -36,13 +34,11 @@ namespace mavplugin {
  *
  * Send safety area to FCU controller.
  */
-class SafetyAreaPlugin : public MavRosPlugin {
-public:
-	SafetyAreaPlugin() :
+	SafetyAreaPlugin::SafetyAreaPlugin() :
 		uas(nullptr)
 	{ };
 
-	void initialize(UAS &uas_,
+	void SafetyAreaPlugin::initialize(UAS &uas_,
 			ros::NodeHandle &nh,
 			diagnostic_updater::Updater &diag_updater)
 	{
@@ -80,26 +76,20 @@ public:
 		safetyarea_sub = safety_nh.subscribe("set", 10, &SafetyAreaPlugin::safetyarea_cb, this);
 	}
 
-	const std::string get_name() const {
+	const std::string SafetyAreaPlugin::get_name() const {
 		return "SafetyArea";
 	}
 
-	const message_map get_rx_handlers() {
+	const MavRosPlugin::message_map SafetyAreaPlugin::get_rx_handlers() {
 		return { /* Rx disabled */ };
 		/**
 		 * @todo Publish SAFETY_ALLOWED_AREA message
 		 */
 	}
 
-private:
-	UAS *uas;
-
-	ros::NodeHandle safety_nh;
-	ros::Subscriber safetyarea_sub;
-
 	/* -*- low-level send -*- */
 
-	void safety_set_allowed_area(
+	void SafetyAreaPlugin::safety_set_allowed_area(
 			uint8_t coordinate_frame,
 			float p1x, float p1y, float p1z,
 			float p2x, float p2y, float p2z) {
@@ -120,7 +110,7 @@ private:
 	 *
 	 * @note ENU frame.
 	 */
-	void send_safety_set_allowed_area(float p1x, float p1y, float p1z,
+	void SafetyAreaPlugin::send_safety_set_allowed_area(float p1x, float p1y, float p1z,
 			float p2x, float p2y, float p2z) {
 
 		ROS_INFO_NAMED("safetyarea", "SA: Set safty area: P1(%f %f %f) P2(%f %f %f)",
@@ -135,7 +125,7 @@ private:
 
 	/* -*- callbacks -*- */
 
-	void safetyarea_cb(const geometry_msgs::PolygonStamped::ConstPtr &req) {
+	void SafetyAreaPlugin::safetyarea_cb(const geometry_msgs::PolygonStamped::ConstPtr &req) {
 		if (req->polygon.points.size() != 2) {
 			ROS_ERROR_NAMED("safetyarea", "SA: Polygon should contain only two points");
 			return;
@@ -149,7 +139,6 @@ private:
 				req->polygon.points[1].y,
 				req->polygon.points[1].z);
 	}
-};
 
 }; // namespace mavplugin
 
