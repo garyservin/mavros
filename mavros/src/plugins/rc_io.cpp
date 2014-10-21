@@ -24,27 +24,21 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include <mavros/mavros_plugin.h>
-
-#include <mavros/RCIn.h>
-#include <mavros/RCOut.h>
-#include <mavros/OverrideRCIn.h>
+#include <mavros/rc_io.h>
 
 namespace mavplugin {
 
 /**
  * @brief RC IO plugin
  */
-class RCIOPlugin : public MavRosPlugin {
-public:
-	RCIOPlugin() :
+	RCIOPlugin::RCIOPlugin() :
 		uas(nullptr),
 		raw_rc_in(0),
 		raw_rc_out(0),
 		has_rc_channels_msg(false)
 	{ };
 
-	void initialize(UAS &uas_,
+	void RCIOPlugin::initialize(UAS &uas_,
 			ros::NodeHandle &nh,
 			diagnostic_updater::Updater &diag_updater)
 	{
@@ -58,11 +52,11 @@ public:
 		uas->sig_connection_changed.connect(boost::bind(&RCIOPlugin::connection_cb, this, _1));
 	};
 
-	std::string const get_name() const {
+	std::string const RCIOPlugin::get_name() const {
 		return "RCIO";
 	};
 
-	const message_map get_rx_handlers() {
+	const MavRosPlugin::message_map RCIOPlugin::get_rx_handlers() {
 		return {
 			MESSAGE_HANDLER(MAVLINK_MSG_ID_RC_CHANNELS_RAW, &RCIOPlugin::handle_rc_channels_raw),
 			MESSAGE_HANDLER(MAVLINK_MSG_ID_RC_CHANNELS, &RCIOPlugin::handle_rc_channels),
@@ -70,22 +64,9 @@ public:
 		};
 	}
 
-private:
-	std::recursive_mutex mutex;
-	UAS *uas;
-
-	std::vector<uint16_t> raw_rc_in;
-	std::vector<uint16_t> raw_rc_out;
-	bool has_rc_channels_msg;
-
-	ros::NodeHandle rc_nh;
-	ros::Publisher rc_in_pub;
-	ros::Publisher rc_out_pub;
-	ros::Subscriber override_sub;
-
 	/* -*- rx handlers -*- */
 
-	void handle_rc_channels_raw(const mavlink_message_t *msg, uint8_t sysid, uint8_t compid) {
+	void RCIOPlugin::handle_rc_channels_raw(const mavlink_message_t *msg, uint8_t sysid, uint8_t compid) {
 		mavlink_rc_channels_raw_t port;
 		mavlink_msg_rc_channels_raw_decode(msg, &port);
 		lock_guard lock(mutex);
@@ -119,7 +100,7 @@ private:
 		rc_in_pub.publish(rcin_msg);
 	}
 
-	void handle_rc_channels(const mavlink_message_t *msg, uint8_t sysid, uint8_t compid) {
+	void RCIOPlugin::handle_rc_channels(const mavlink_message_t *msg, uint8_t sysid, uint8_t compid) {
 		mavlink_rc_channels_t channels;
 		mavlink_msg_rc_channels_decode(msg, &channels);
 		lock_guard lock(mutex);
@@ -168,7 +149,7 @@ private:
 		rc_in_pub.publish(rcin_msg);
 	}
 
-	void handle_servo_output_raw(const mavlink_message_t *msg, uint8_t sysid, uint8_t compid) {
+	void RCIOPlugin::handle_servo_output_raw(const mavlink_message_t *msg, uint8_t sysid, uint8_t compid) {
 		mavlink_servo_output_raw_t port;
 		mavlink_msg_servo_output_raw_decode(msg, &port);
 		lock_guard lock(mutex);
@@ -199,7 +180,7 @@ private:
 
 	/* -*- low-level send functions -*- */
 
-	void rc_channels_override(const boost::array<uint16_t, 8> &channels) {
+	void RCIOPlugin::rc_channels_override(const boost::array<uint16_t, 8> &channels) {
 		mavlink_message_t msg;
 
 		mavlink_msg_rc_channels_override_pack_chan(UAS_PACK_CHAN(uas), &msg,
@@ -218,18 +199,17 @@ private:
 
 	/* -*- callbacks -*- */
 
-	void connection_cb(bool connected) {
+	void RCIOPlugin::connection_cb(bool connected) {
 		lock_guard lock(mutex);
 		raw_rc_in.clear();
 		raw_rc_out.clear();
 		has_rc_channels_msg = false;
 	}
 
-	void override_cb(const mavros::OverrideRCIn::ConstPtr req) {
+	void RCIOPlugin::override_cb(const mavros::OverrideRCIn::ConstPtr req) {
 
 		rc_channels_override(req->channels);
 	}
-};
 
 }; // namespace mavplugin
 

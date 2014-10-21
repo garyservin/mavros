@@ -177,6 +177,7 @@ add_library(mavros
   src/plugins/imu_pub.cpp
   src/plugins/local_position.cpp
   src/plugins/param.cpp
+  src/plugins/rc_io.cpp
 )
 
 add_dependencies(mavros

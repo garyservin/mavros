@@ -32,6 +32,7 @@
 #include <mavros/imu_pub.h>
 #include <mavros/local_position.h>
 #include <mavros/param_plugin.h>
+#include <mavros/rc_io.h>
 
 using namespace mavros;
 using namespace mavconn;
@@ -215,6 +216,9 @@ void MavRos::add_plugins() {
 	add_plugin_simple(plugin);
 
 	plugin = boost::make_shared<mavplugin::ParamPlugin>();
+	add_plugin_simple(plugin);
+
+	plugin = boost::make_shared<mavplugin::RCIOPlugin>();
 	add_plugin_simple(plugin);
 }
 
