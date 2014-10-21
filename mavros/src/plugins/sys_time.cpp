@@ -24,10 +24,7 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include <mavros/mavros_plugin.h>
-
-#include <sensor_msgs/TimeReference.h>
-#include <std_msgs/Duration.h>
+#include <mavros/sys_time.h>
 
 namespace mavplugin {
 
@@ -36,10 +33,7 @@ namespace mavplugin {
  *
  * Based on diagnistic_updater::FrequencyStatus
  */
-class TimeSyncStatus : public diagnostic_updater::DiagnosticTask
-{
-public:
-	TimeSyncStatus(const std::string name, size_t win_size) :
+	TimeSyncStatus::TimeSyncStatus(const std::string name, size_t win_size) :
 		diagnostic_updater::DiagnosticTask(name),
 		window_size_(win_size),
 		min_freq_(0.01),
@@ -53,7 +47,7 @@ public:
 		clear();
 	}
 
-	void clear() {
+	void TimeSyncStatus::clear() {
 		lock_guard lock(mutex);
 		ros::Time curtime = ros::Time::now();
 		count_ = 0;
@@ -68,7 +62,7 @@ public:
 		hist_indx_ = 0;
 	}
 
-	void tick(int64_t dt, uint64_t timestamp_us) {
+	void TimeSyncStatus::tick(int64_t dt, uint64_t timestamp_us) {
 		lock_guard lock(mutex);
 		count_++;
 		last_dt = dt;
@@ -76,12 +70,12 @@ public:
 		last_ts = timestamp_us;
 	}
 
-	void set_timestamp(uint64_t timestamp_us) {
+	void TimeSyncStatus::set_timestamp(uint64_t timestamp_us) {
 		lock_guard lock(mutex);
 		last_ts = timestamp_us;
 	}
 
-	void run(diagnostic_updater::DiagnosticStatusWrapper &stat) {
+	void TimeSyncStatus::run(diagnostic_updater::DiagnosticStatusWrapper &stat) {
 		lock_guard lock(mutex);
 		ros::Time curtime = ros::Time::now();
 		int curseq = count_;
@@ -114,32 +108,15 @@ public:
 		stat.addf("Last system time (s)", "%0.6f", last_ts / 1e6);
 	}
 
-private:
-	int count_;
-	std::vector<ros::Time> times_;
-	std::vector<int> seq_nums_;
-	int hist_indx_;
-	std::recursive_mutex mutex;
-	const size_t window_size_;
-	const double min_freq_;
-	const double max_freq_;
-	const double tolerance_;
-	int64_t last_dt;
-	int64_t dt_sum;
-	uint64_t last_ts;
-};
 
 
-
-class SystemTimePlugin : public MavRosPlugin {
-public:
-	SystemTimePlugin():
+	SystemTimePlugin::SystemTimePlugin():
 		uas(nullptr),
 		dt_diag("Time Sync", 10),
 		time_offset_us(0)
 	{};
 
-	void initialize(UAS &uas_,
+	void SystemTimePlugin::initialize(UAS &uas_,
 			ros::NodeHandle &nh,
 			diagnostic_updater::Updater &diag_updater)
 	{
@@ -165,28 +142,17 @@ public:
 	}
 
 
-	std::string const get_name() const {
+	std::string const SystemTimePlugin::get_name() const {
 		return "SystemTime";
 	}
 
-	const message_map get_rx_handlers() {
+	const MavRosPlugin::message_map SystemTimePlugin::get_rx_handlers() {
 		return {
 			MESSAGE_HANDLER(MAVLINK_MSG_ID_SYSTEM_TIME, &SystemTimePlugin::handle_system_time),
 		};
 	}
 
-private:
-	UAS *uas;
-	ros::Publisher time_ref_pub;
-	ros::Publisher time_offset_pub;
-	ros::Timer sys_time_timer;
-	TimeSyncStatus dt_diag;
-
-	std::string frame_id;
-	std::string time_ref_source;
-	uint64_t time_offset_us;
-
-	void handle_system_time(const mavlink_message_t *msg, uint8_t sysid, uint8_t compid) {
+	void SystemTimePlugin::handle_system_time(const mavlink_message_t *msg, uint8_t sysid, uint8_t compid) {
 		mavlink_system_time_t mtime;
 		mavlink_msg_system_time_decode(msg, &mtime);
 
@@ -239,7 +205,7 @@ private:
 		time_offset_pub.publish(offset);
 	}
 
-	void sys_time_cb(const ros::TimerEvent &event) {
+	void SystemTimePlugin::sys_time_cb(const ros::TimerEvent &event) {
 		mavlink_message_t msg;
 
 		uint64_t time_unix_usec = ros::Time::now().toNSec() / 1000;  // nano -> micro
@@ -250,7 +216,6 @@ private:
 				);
 		UAS_FCU(uas)->send_message(&msg);
 	}
-};
 
 }; // namespace mavplugin
 
