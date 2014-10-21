@@ -41,6 +41,7 @@
 #include <mavros/sys_status.h>
 #include <mavros/sys_time.h>
 #include <mavros/vfr_hud.h>
+#include <mavros/waypoint.h>
 
 using namespace mavros;
 using namespace mavconn;
@@ -251,6 +252,9 @@ void MavRos::add_plugins() {
 	add_plugin_simple(plugin);
 
 	plugin = boost::make_shared<mavplugin::VfrHudPlugin>();
+	add_plugin_simple(plugin);
+
+	plugin = boost::make_shared<mavplugin::WaypointPlugin>();
 	add_plugin_simple(plugin);
 }
 
