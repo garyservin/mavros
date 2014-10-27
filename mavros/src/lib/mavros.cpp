@@ -121,6 +121,8 @@ MavRos::MavRos(const ros::NodeHandle &nh_) :
 				boost::bind(&MAVConnInterface::send_message, gcs_link, _1, _2, _3));
 		gcs_link->message_received.connect(
 				boost::bind(&MAVConnInterface::send_message, fcu_link, _1, _2, _3));
+		gcs_link->message_received.connect(
+				boost::bind(&MavRos::plugin_route_cb, this, _1, _2, _3));
 		gcs_link_diag.set_connection_status(true);
 	}
 
