@@ -235,6 +235,9 @@ void MavRos::add_plugins() {
 	plugin = boost::make_shared<mavplugin::SafetyAreaPlugin>();
 	add_plugin_simple(plugin);
 /*
+ * Thses plugis are not compatible with the SetpointVelocityPlugin
+ * and we need that one!
+ *
 	plugin = boost::make_shared<mavplugin::SetpointAccelerationPlugin>();
 	add_plugin_simple(plugin);
 
