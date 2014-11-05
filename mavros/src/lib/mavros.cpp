@@ -234,7 +234,7 @@ void MavRos::add_plugins() {
 
 	plugin = boost::make_shared<mavplugin::SafetyAreaPlugin>();
 	add_plugin_simple(plugin);
-
+/*
 	plugin = boost::make_shared<mavplugin::SetpointAccelerationPlugin>();
 	add_plugin_simple(plugin);
 
@@ -243,7 +243,7 @@ void MavRos::add_plugins() {
 
 	plugin = boost::make_shared<mavplugin::SetpointPositionPlugin>();
 	add_plugin_simple(plugin);
-
+*/
 	plugin = boost::make_shared<mavplugin::SetpointVelocityPlugin>();
 	add_plugin_simple(plugin);
 
