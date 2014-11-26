@@ -188,7 +188,7 @@ void MAVConnUDP::async_receive_end(error_code error, size_t bytes_transferred)
 	mavlink_status_t status;
 
 	if (error) {
-		ROS_ERROR_STREAM_NAMED("mavconn", "udp" << channel << ":receive: " << error.message());
+		ROS_ERROR_STREAM_NAMED("mavconn", "udp" << channel << ":receive: " << error.message() << "(" << error.value() << ")");
 		close();
 		return;
 	}
@@ -234,9 +234,13 @@ void MAVConnUDP::do_sendto(bool check_tx_state)
 void MAVConnUDP::async_sendto_end(error_code error, size_t bytes_transferred)
 {
 	if (error) {
-		ROS_ERROR_STREAM_NAMED("mavconn", "udp" << channel << ":sendto: " << error.message());
-		close();
-		return;
+		ROS_ERROR_STREAM_ONCE_NAMED("mavconn", "udp" << channel << ":sendto: " << error.message() << "(" << error.value() << ")");
+    if (error.value() == boost::asio::error::network_unreachable) {
+		  ROS_ERROR_STREAM_ONCE_NAMED("mavconn", "udp" << channel << ":sendto: ignoring 'Network Unreachable' error, will keep retrying");
+    } else {
+      close();
+      return;
+    }
 	}
 
 	lock_guard lock(mutex);
