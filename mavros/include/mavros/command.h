@@ -84,7 +84,9 @@ private:
 	ros::ServiceServer land_srv;
 	ros::ServiceServer guided_srv;
 
-	ros::Publisher record_pub;
+	ros::Publisher record_pub;          // Start video recording
+	ros::Publisher snapshot_pub;        // Take a single snapshot
+	ros::Publisher get_snapshots_pub;   // Get all pending snapshots
 
 	std::list<CommandTransaction *> ack_waiting_list;
 	static constexpr int ACK_TIMEOUT_MS = 5000;

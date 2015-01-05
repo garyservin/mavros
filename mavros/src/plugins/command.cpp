@@ -55,6 +55,8 @@ void CommandPlugin::initialize(UAS &uas_,
 	guided_srv = cmd_nh.advertiseService("guided_enable", &CommandPlugin::guided_cb, this);
 
 	record_pub = nh.advertise<std_msgs::Bool>("record", 10, true);
+	snapshot_pub = nh.advertise<std_msgs::Bool>("take_snapshot", 10, false);
+	get_snapshots_pub = nh.advertise<std_msgs::Bool>("get_snapshots", 10, false);
 }
 
 std::string const CommandPlugin::get_name() const {
@@ -104,6 +106,25 @@ void CommandPlugin::handle_command_int(const mavlink_message_t *msg, uint8_t sys
 			record->data = false;
 		}
 		record_pub.publish(record);
+	}else if(int_.command == MAV_CMD_IMAGE_START_CAPTURE || int_.command == MAV_CMD_IMAGE_STOP_CAPTURE){
+		std_msgs::BoolPtr snapshot = boost::make_shared<std_msgs::Bool>();
+		if(int_.command == MAV_CMD_IMAGE_START_CAPTURE){
+			float period = int_.param1;
+			float total = int_.param2;
+			float resolution_mpx = int_.param3;
+			snapshot->data = true;
+		} else {
+			snapshot->data = false;
+		}
+		snapshot_pub.publish(snapshot);
+	}else if(int_.command == MAV_CMD_PANORAMA_CREATE){
+		std_msgs::BoolPtr get_snapshots = boost::make_shared<std_msgs::Bool>();
+		float angle_hor = int_.param1;
+		float angle_ver = int_.param2;
+		float speed_hor = int_.param3;
+		float speed_ver = int_.param4;
+		get_snapshots->data = true;
+		get_snapshots_pub.publish(get_snapshots);
 	}
 }
 
